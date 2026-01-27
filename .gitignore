@@ -18,10 +18,24 @@ Thumbs.db
 *.ipr
 *.iws
 out/
-.pem
-.jks
-.yaml
-pom.xml
+# 密钥和证书文件
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.cert
+*.cer
+*.crt
+*.csr
+# 密码/密钥相关文本
+*password*.txt
+*secret*.txt
+# 环境变量文件（已有的可以保留）
+.env
+*.env.*
+# 阿里云/其他云密钥配置文件
+application*.yaml  
 ############################
 # Java / Spring Boot
 ############################
