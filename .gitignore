@@ -18,7 +18,10 @@ Thumbs.db
 *.ipr
 *.iws
 out/
-
+.pem
+.jks
+.yaml
+pom.xml
 ############################
 # Java / Spring Boot
 ############################
