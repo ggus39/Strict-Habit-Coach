@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
 import { parseEther } from 'viem';
 import { Page } from '../types';
 import { HABIT_ESCROW_ADDRESS, HABIT_ESCROW_ABI, PenaltyType } from '../contracts';
@@ -16,7 +17,7 @@ const habitTypes = {
 };
 
 const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
 
   // 表单状态
   const [selectedHabit, setSelectedHabit] = useState<keyof typeof habitTypes>('reading');
@@ -49,10 +50,12 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
       functionName: 'createChallenge',
       args: [
         BigInt(targetDays),
-        penaltyType, // 移除 difficultyMultiplier
+        penaltyType,
         habitDescription,
       ],
       value: parseEther(stakeAmount.toString()),
+      chain: sepolia,
+      account: address,
       // 手动设置 Gas Limit 避免 "transaction gas limit too high" 错误
       // 某些钱包或 RPC 会估算出一个过高的值 (如 2100万) 导致超过区块上限
       gas: BigInt(500000),

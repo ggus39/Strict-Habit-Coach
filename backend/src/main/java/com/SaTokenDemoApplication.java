@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@MapperScan("com.tl.satoken.mapper")
+@MapperScan("com.mapper")
 @EnableScheduling
 public class SaTokenDemoApplication {
 
