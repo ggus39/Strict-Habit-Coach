@@ -34,8 +34,6 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
     query: { enabled: !!address },
   });
 
-  // 读取所有可能的挑战 (假设上限是 10 个，但用户说只能发起 3 个，我们读前 3 个或者更多以防万一)
-  // 为了简单，我们只读前 5 个，因为 challengeCount 应该很小
   // 使用 useReadContracts 批量读取会更优雅，但这里复用 ChallengeList 的分开读取逻辑简单直接
   const { data: challenge0 } = useReadContract({
     address: HABIT_ESCROW_ADDRESS,

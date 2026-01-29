@@ -1,16 +1,15 @@
-package com.domain;
+package com.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("daily_check_in")
-public class DailyCheckIn implements Serializable {
+@TableName("strava_connection")
+public class StravaConnection implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,14 +18,15 @@ public class DailyCheckIn implements Serializable {
 
     private String walletAddress;
 
-    private Long challengeId;
+    private Long stravaAthleteId;
 
-    private LocalDate checkInDate;
+    private String accessToken;
+
+    private String refreshToken;
+
+    private LocalDateTime expiresAt;
 
     private LocalDateTime createdAt;
 
-    /**
-     * 打卡凭证内容 (如: 阅读笔记，GitHub Commit ID 等)
-     */
-    private String proofContent;
+    private LocalDateTime updatedAt;
 }

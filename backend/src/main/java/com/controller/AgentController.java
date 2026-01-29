@@ -32,7 +32,7 @@ public class AgentController {
     @Autowired
     private com.service.BlockchainService blockchainService;
 
-    @Value("${frontend.url:http://localhost:5173}")
+    @Value("${frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
     // ==================== GitHub OAuth 相关 ====================
@@ -172,8 +172,155 @@ public class AgentController {
             result.put("clockedIn", false);
             result.put("message", "今日未打卡 ❌");
         }
+        return result;
+    }
+
+    @Autowired
+    private com.service.StravaService stravaService;
+
+    /**
+     * 检查用户 Strava 跑步打卡状态
+     */
+    @GetMapping("/strava/check")
+    public Map<String, Object> checkStrava(
+            @RequestParam String walletAddress,
+            @RequestParam(required = false) Long challengeId) {
         
-        result.put("githubUsername", username);
+        Map<String, Object> result = new HashMap<>();
+        
+        // 1. 检查连接状态
+        if (stravaService.getConnection(walletAddress) == null) {
+             result.put("success", false);
+             result.put("message", "请先连接 Strava");
+             return result;
+        }
+        
+        // 2. 检查跑步活动
+        boolean hasRun = stravaService.checkRunningToday(walletAddress);
+        
+        if (hasRun) {
+            result.put("success", true);
+            result.put("clockedIn", true);
+            result.put("message", "今日跑步已达标 ✅");
+            
+            // 3. 挑战打卡记录 (幂等性检查)
+            if (challengeId != null) {
+                java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
+                LambdaQueryWrapper<DailyCheckIn> query = new LambdaQueryWrapper<>();
+                query.eq(DailyCheckIn::getWalletAddress, walletAddress)
+                     .eq(DailyCheckIn::getChallengeId, challengeId)
+                     .eq(DailyCheckIn::getCheckInDate, today);
+
+                if (dailyCheckInMapper.exists(query)) {
+                    result.put("message", "今日跑步已达标 ✅ (无需重复上链)");
+                } else {
+                    try {
+                        String txHash = blockchainService.recordDayComplete(walletAddress, java.math.BigInteger.valueOf(challengeId));
+                         // 在数据库记录成功状态
+                        DailyCheckIn checkIn = new DailyCheckIn();
+                        checkIn.setWalletAddress(walletAddress);
+                        checkIn.setChallengeId(challengeId);
+                        checkIn.setCheckInDate(today);
+                        checkIn.setCreatedAt(java.time.LocalDateTime.now());
+                        dailyCheckInMapper.insert(checkIn);
+                        
+                        result.put("txHash", txHash);
+                        result.put("message", "今日跑步已达标 ✅ (链上记录成功: " + txHash + ")");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        result.put("message", "今日跑步已达标 ✅ (但链上记录失败: " + e.getMessage() + ")");
+                    }
+                }
+            }
+        } else {
+             result.put("success", true);
+             result.put("clockedIn", false);
+             result.put("message", "今日尚未检测到有效的跑步记录 ❌");
+        }
+        return result;
+    }
+
+    /**
+     * 阅读打卡 (上传笔记)
+     */
+    @PostMapping("/reading/check")
+    public Map<String, Object> checkReading(
+            @RequestParam String walletAddress,
+            @RequestParam Long challengeId,
+            @RequestParam String content) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        if (content == null || content.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请填写阅读笔记");
+            return result;
+        }
+
+        // 1. 幂等性检查
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
+        LambdaQueryWrapper<DailyCheckIn> query = new LambdaQueryWrapper<>();
+        query.eq(DailyCheckIn::getWalletAddress, walletAddress)
+             .eq(DailyCheckIn::getChallengeId, challengeId)
+             .eq(DailyCheckIn::getCheckInDate, today);
+
+        if (dailyCheckInMapper.exists(query)) {
+            result.put("success", true);
+            result.put("clockedIn", true);
+            result.put("message", "今日阅读任务已完成 ✅ (无需重复上链)");
+            return result;
+        }
+
+        // 2. 记录上链
+        try {
+            String txHash = blockchainService.recordDayComplete(walletAddress, java.math.BigInteger.valueOf(challengeId));
+            
+            // 3. 记录数据库
+            DailyCheckIn checkIn = new DailyCheckIn();
+            checkIn.setWalletAddress(walletAddress);
+            checkIn.setChallengeId(challengeId);
+            checkIn.setCheckInDate(today);
+            checkIn.setCreatedAt(java.time.LocalDateTime.now());
+            checkIn.setProofContent(content); // 保存笔记
+            dailyCheckInMapper.insert(checkIn);
+
+            result.put("success", true);
+            result.put("clockedIn", true);
+            result.put("txHash", txHash);
+            result.put("message", "阅读打卡成功 ✅ (链上记录: " + txHash + ")");
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "上链失败: " + e.getMessage());
+        }
+        
+        return result;
+    }
+    /**
+     * 检查阅读打卡状态 (用于前端查询是否已完成)
+     */
+    @GetMapping("/reading/check")
+    public Map<String, Object> checkReadingStatus(
+            @RequestParam String walletAddress,
+            @RequestParam Long challengeId) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
+        LambdaQueryWrapper<DailyCheckIn> query = new LambdaQueryWrapper<>();
+        query.eq(DailyCheckIn::getWalletAddress, walletAddress)
+             .eq(DailyCheckIn::getChallengeId, challengeId)
+             .eq(DailyCheckIn::getCheckInDate, today);
+
+        if (dailyCheckInMapper.exists(query)) {
+            result.put("success", true);
+            result.put("clockedIn", true);
+            result.put("message", "今日阅读任务已完成 ✅");
+        } else {
+            result.put("success", true);
+            result.put("clockedIn", false);
+            result.put("message", "今日尚未打卡");
+        }
         
         return result;
     }

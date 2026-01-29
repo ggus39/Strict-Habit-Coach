@@ -128,6 +128,48 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
     window.location.href = `${API_BASE}/github/auth?walletAddress=${address}`;
   };
 
+  const [completedChallenges, setCompletedChallenges] = useState<Set<number>>(new Set());
+
+  // Reading Challenge State
+  const [readingModalOpen, setReadingModalOpen] = useState(false);
+  const [readingNote, setReadingNote] = useState('');
+  const [currentReadingChallengeId, setCurrentReadingChallengeId] = useState<number | null>(null);
+
+  const handleOpenReadingModal = (challengeId: number) => {
+    setCurrentReadingChallengeId(challengeId);
+    setReadingModalOpen(true);
+    setReadingNote('');
+  };
+
+  const handleReadingSubmit = async () => {
+    if (!readingNote.trim() || currentReadingChallengeId === null || !address) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('walletAddress', address);
+      formData.append('challengeId', currentReadingChallengeId.toString());
+      formData.append('content', readingNote);
+
+      const resp = await fetch(`${API_BASE}/reading/check`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await resp.json();
+
+      if (data.success) {
+        alert(data.message);
+        setReadingModalOpen(false);
+        // Refresh status
+        handleCheckCommits(true);
+      } else {
+        alert(data.message);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('提交失败');
+    }
+  };
+
   // 3. 检查今日打卡
   const handleCheckCommits = async (isAuto = false) => {
     if (!address || !githubStatus.connected) return;
@@ -137,45 +179,75 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
     let succcesCount = 0;
     let txHashes: string[] = [];
     let clockedIn = false;
+    const newCompleted = new Set<number>();
 
     try {
       if (activeChallenges.length === 0) {
-        // Fallback or just check 0 if exists? Or just display logic. 
-        // If no active challenges, maybe just check generic status?
-        // But for "Today's Tasks", we typically iterate active ones.
-        // Let's keep the generic check just in case, or skip?
-        // If no active challenges, let's just do a generic check to show "Clocked In" status generally?
-        // But wait, user wants one-to-one mapping.
-        // If 0 active challenges, the list is empty, nothing to check.
         setCheckResult("当前无进行中的挑战");
       } else {
         // Iterate all active challenges
         for (const challenge of activeChallenges) {
-          // 只处理 "编程" 挑战 (GitHub 挑战)
-          if (!challenge.habitDescription.includes('编程')) continue;
+          // 1. GitHub 挑战 (编程)
+          if (challenge.habitDescription.includes('编程')) {
+            let url = `${API_BASE}/github/check?walletAddress=${address}&challengeId=${challenge.id}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (data.clockedIn) {
+              clockedIn = true;
+              succcesCount++;
+              newCompleted.add(challenge.id);
+              if (data.txHash) txHashes.push(data.txHash);
+            }
+          }
 
-          let url = `${API_BASE}/github/check?walletAddress=${address}&challengeId=${challenge.id}`;
-          const resp = await fetch(url);
-          const data = await resp.json();
+          // 2. Strava 挑战 (跑步)
+          if (challenge.habitDescription.includes('跑步')) {
+            let url = `${API_BASE}/strava/check?walletAddress=${address}&challengeId=${challenge.id}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (data.clockedIn) {
+              clockedIn = true;
+              succcesCount++;
+              newCompleted.add(challenge.id);
+              if (data.txHash) txHashes.push(data.txHash);
+            } else if (!data.success && data.message.includes('连接 Strava')) {
+              // Prompt to connect
+            }
+          }
 
-          if (data.clockedIn) {
-            clockedIn = true;
-            succcesCount++;
-            if (data.txHash) txHashes.push(data.txHash);
+          // 3. 阅读挑战 (检查数据库)
+          if (challenge.habitDescription.includes('阅读')) {
+            let url = `${API_BASE}/reading/check?walletAddress=${address}&challengeId=${challenge.id}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (data.clockedIn) {
+              clockedIn = true;
+              succcesCount++;
+              newCompleted.add(challenge.id);
+            }
           }
         }
+
+        // 更新完成状态 Set
+        setCompletedChallenges(prev => {
+          const next = new Set(prev);
+          newCompleted.forEach(id => next.add(id));
+          return next;
+        });
 
         if (clockedIn) {
           let msg = `今日已打卡 ✅`;
           if (txHashes.length > 0) msg += `\n交易哈希: ${txHashes.join(', ')}`;
           setCheckResult(msg);
-
           if (!isAuto) alert(msg);
-        } else if (succcesCount === 0 && activeChallenges.some(c => c.habitDescription.includes('编程'))) {
-          // 只有当有 编程 挑战 且未打卡时才提示未完成，否则不打扰
-          const msg = '今日尚未检测到有效提交，请继续加油 ❌';
-          setCheckResult(msg);
-          if (!isAuto) alert(msg);
+        } else if (succcesCount === 0) {
+          // 检查是否至少有一个待打卡的 active challenge
+          const needsCheck = activeChallenges.some(c => c.habitDescription.includes('编程') || c.habitDescription.includes('跑步'));
+          if (needsCheck) {
+            const msg = '今日尚未检测到有效提交或运动记录，请继续加油 ❌';
+            setCheckResult(msg);
+            if (!isAuto) alert(msg);
+          }
         }
       }
 
@@ -184,6 +256,38 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
       console.error(e);
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  // Strava Status
+  const [stravaConnected, setStravaConnected] = useState(false);
+
+  // Check Strava Status
+  useEffect(() => {
+    if (address) {
+      fetch(`${API_BASE}/strava/status?walletAddress=${address}`)
+        .then(res => res.json())
+        .then(data => setStravaConnected(data.connected))
+        .catch(err => console.error(err));
+    }
+  }, [address]);
+
+  // 处理 Strava 回调参数
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('strava') === 'connected') {
+      setStravaConnected(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handleConnectStrava = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/strava/auth/url?walletAddress=${address}`);
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch (e) {
+      alert('获取授权链接失败');
     }
   };
 
@@ -201,14 +305,57 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
+      {/* Reading Modal */}
+      {readingModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">提交阅读笔记</h3>
+            <textarea
+              className="w-full h-32 p-3 border border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none bg-slate-50 text-slate-900"
+              placeholder="今天读了什么？有什么感悟？记录下来吧..."
+              value={readingNote}
+              onChange={e => setReadingNote(e.target.value)}
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setReadingModalOpen(false)}
+                className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleReadingSubmit}
+                disabled={!readingNote.trim()}
+                className="px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                提交打卡
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">全局数据看板</h1>
           <p className="text-slate-400 mt-2 text-lg font-medium">查看所有习惯挑战的汇总表现与 Web3 资产状态。</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-500 bg-white border border-slate-100 px-4 py-2 rounded-full shadow-soft">
-          <Icon name="circle" fill className="text-emerald-500 text-xs" />
-          <span>AI 正在同步 <span className="font-bold text-slate-700">GitHub 数据源</span></span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm text-slate-500 bg-white border border-slate-100 px-4 py-2 rounded-full shadow-soft">
+            <Icon name="circle" fill className="text-emerald-500 text-xs" />
+            <span>GitHub <span className="font-bold text-slate-700">已同步</span></span>
+          </div>
+          {/* Strava Status Badge */}
+          {activeChallenges.some(c => c.habitDescription.includes('跑步')) && (
+            <div onClick={!stravaConnected ? handleConnectStrava : undefined} className={`flex items-center gap-2 text-sm px-4 py-2 rounded-full shadow-soft border cursor-pointer transition-all ${stravaConnected ? 'bg-white border-slate-100 text-slate-500' : 'bg-orange-50 border-orange-100 text-orange-600 hover:bg-orange-100'}`}>
+              <Icon name="directions_run" fill className={stravaConnected ? "text-emerald-500 text-xs" : "text-orange-500 text-xs"} />
+              {stravaConnected ? (
+                <span>Strava <span className="font-bold text-slate-700">已连接</span></span>
+              ) : (
+                <span className="font-bold">连接 Strava</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -278,9 +425,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
               ) : (
                 activeChallenges.map((challenge) => {
                   const habitInfo = getHabitIcon(challenge.habitDescription);
-                  // 仅 "编程" 挑战显示 "已完成" (GitHub 打卡)，其他暂时保持 "进行中"
-                  const isGitHubHabit = challenge.habitDescription.includes('编程');
-                  const isClockedIn = isGitHubHabit && checkResult?.includes('已打卡');
+                  // 状态判定逻辑: 检查该挑战ID是否在完成列表里
+                  const isClockedIn = completedChallenges.has(challenge.id);
+                  const isReading = challenge.habitDescription.includes('阅读');
 
                   return (
                     <div key={challenge.id} className="flex items-center gap-6 p-2 hover:bg-slate-50 rounded-xl transition-colors">
@@ -297,6 +444,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
                           <div className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-sm font-bold">
                             <Icon name="check_circle" className="text-lg" fill />
                             <span>已完成</span>
+                          </div>
+                        ) : isReading ? (
+                          <div
+                            onClick={() => handleOpenReadingModal(challenge.id)}
+                            className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold text-center cursor-pointer hover:bg-blue-100 transition-colors"
+                          >
+                            提交笔记
                           </div>
                         ) : (
                           <div className="px-4 py-1.5 bg-sky-50 text-sky-500 rounded-lg text-sm font-bold text-center">
@@ -336,6 +490,27 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
                   className={`text-xs font-bold ${githubStatus.connected ? 'text-slate-400' : 'text-primary'}`}
                 >
                   {githubStatus.connected ? '已绑定' : '连接'}
+                </button>
+              </div>
+
+              {/* Strava Connection */}
+              <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-slate-900">
+                    <Icon name="directions_run" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Strava</p>
+                    <p className={`text-[10px] font-bold ${stravaConnected ? 'text-emerald-500' : 'text-slate-400'}`}>
+                      {stravaConnected ? '已连接' : '未连接'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={stravaConnected ? undefined : handleConnectStrava}
+                  className={`text-xs font-bold ${stravaConnected ? 'text-slate-400' : 'text-primary'}`}
+                >
+                  {stravaConnected ? '已绑定' : '连接'}
                 </button>
               </div>
             </div>
