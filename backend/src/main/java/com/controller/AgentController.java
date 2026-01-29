@@ -240,6 +240,9 @@ public class AgentController {
         return result;
     }
 
+    @Autowired
+    private com.service.DeepSeekService deepSeekService;
+
     /**
      * 阅读打卡 (上传笔记)
      */
@@ -254,6 +257,14 @@ public class AgentController {
         if (content == null || content.trim().isEmpty()) {
             result.put("success", false);
             result.put("message", "请填写阅读笔记");
+            return result;
+        }
+
+        // 0. AI 审核
+        com.service.DeepSeekService.ValidationResult validation = deepSeekService.validateReadingNote(content);
+        if (!validation.pass) {
+            result.put("success", false);
+            result.put("message", "打卡失败: " + validation.reason);
             return result;
         }
 
@@ -287,7 +298,8 @@ public class AgentController {
             result.put("success", true);
             result.put("clockedIn", true);
             result.put("txHash", txHash);
-            result.put("message", "阅读打卡成功 ✅ (链上记录: " + txHash + ")");
+            // 将 AI 的评语也返回给前端
+            result.put("message", "打卡成功 ✅ " + validation.reason);
         } catch (Exception e) {
             e.printStackTrace();
             result.put("success", false);

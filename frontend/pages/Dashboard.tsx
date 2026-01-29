@@ -134,6 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
   const [readingModalOpen, setReadingModalOpen] = useState(false);
   const [readingNote, setReadingNote] = useState('');
   const [currentReadingChallengeId, setCurrentReadingChallengeId] = useState<number | null>(null);
+  const [isSubmittingReading, setIsSubmittingReading] = useState(false);
 
   const handleOpenReadingModal = (challengeId: number) => {
     setCurrentReadingChallengeId(challengeId);
@@ -144,6 +145,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
   const handleReadingSubmit = async () => {
     if (!readingNote.trim() || currentReadingChallengeId === null || !address) return;
 
+    setIsSubmittingReading(true);
     try {
       const formData = new FormData();
       formData.append('walletAddress', address);
@@ -157,16 +159,17 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
       const data = await resp.json();
 
       if (data.success) {
-        alert(data.message);
-        setReadingModalOpen(false);
+        setCheckResult(data.message); // 显示 AI 的评语 (UI内展示)
         // Refresh status
         handleCheckCommits(true);
       } else {
-        alert(data.message);
+        setCheckResult(data.message); // 显示 AI 的拒绝理由 (UI内展示)
       }
     } catch (e) {
       console.error(e);
-      alert('提交失败');
+      setCheckResult('提交失败: 网络或服务器错误');
+    } finally {
+      setIsSubmittingReading(false);
     }
   };
 
@@ -306,30 +309,118 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
       {/* Reading Modal */}
+      {/* Reading Modal */}
       {readingModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-bold mb-4">提交阅读笔记</h3>
-            <textarea
-              className="w-full h-32 p-3 border border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none bg-slate-50 text-slate-900"
-              placeholder="今天读了什么？有什么感悟？记录下来吧..."
-              value={readingNote}
-              onChange={e => setReadingNote(e.target.value)}
-            />
-            <div className="flex justify-end gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
+            onClick={() => !isSubmittingReading && setReadingModalOpen(false)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl p-8 w-full max-w-lg shadow-2xl ring-1 ring-white/50 animate-in zoom-in-95 duration-200 transform">
+
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="size-12 bg-indigo-50 rounded-2xl flex items-center justify-center shadow-inner">
+                <Icon name="psychology" className="text-indigo-600 text-2xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">提交阅读笔记</h3>
+                <p className="text-slate-500 text-sm font-medium">Strict Coach 正在盯着你...</p>
+              </div>
               <button
                 onClick={() => setReadingModalOpen(false)}
-                className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-lg transition-colors"
+                className="ml-auto text-slate-400 hover:text-slate-600 transition-colors"
               >
-                取消
+                <Icon name="close" />
               </button>
-              <button
-                onClick={handleReadingSubmit}
-                disabled={!readingNote.trim()}
-                className="px-4 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors"
-              >
-                提交打卡
-              </button>
+            </div>
+
+            {/* Input Area or Feedback Result */}
+            {checkResult && readingModalOpen && !isSubmittingReading && (checkResult.includes('AI') || checkResult.includes('成功') || checkResult.includes('失败')) ? (
+              <div className={`rounded-xl p-6 mb-6 ${checkResult.includes('成功') || checkResult.includes('✅') ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'}`}>
+                <div className="flex items-start gap-3">
+                  <Icon
+                    name={checkResult.includes('成功') || checkResult.includes('✅') ? "check_circle" : "error"}
+                    className={`text-2xl mt-0.5 ${checkResult.includes('成功') || checkResult.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}
+                  />
+                  <div>
+                    <h4 className={`font-bold mb-1 ${checkResult.includes('成功') || checkResult.includes('✅') ? 'text-emerald-800' : 'text-red-800'}`}>
+                      {checkResult.includes('成功') || checkResult.includes('✅') ? '审核通过' : '审核拒绝'}
+                    </h4>
+                    <p className={`text-sm leading-relaxed ${checkResult.includes('成功') || checkResult.includes('✅') ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {checkResult.replace('打卡成功 ✅ ', '').replace('打卡失败: ', '')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">
+                  今日感悟
+                </label>
+                <div className="relative group">
+                  <textarea
+                    className="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transition-all placeholder:text-slate-400 text-slate-700 leading-relaxed font-medium group-hover:bg-white"
+                    placeholder="写下你今天的阅读收获（至少10个字），AI 将会严格审核你的内容..."
+                    value={readingNote}
+                    onChange={e => setReadingNote(e.target.value)}
+                    disabled={isSubmittingReading}
+                  />
+                  <div className="absolute bottom-3 right-3 text-xs font-bold text-slate-300 pointer-events-none">
+                    {readingNote.length} 字
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-400 flex items-center gap-1.5 px-1">
+                  <Icon name="info" className="text-indigo-400" />
+                  <span>AI 会判断你的笔记是否敷衍，请认真对待。</span>
+                </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              {!checkResult || !readingModalOpen || isSubmittingReading || (!checkResult.includes('AI') && !checkResult.includes('成功') && !checkResult.includes('失败')) ? (
+                <>
+                  <button
+                    onClick={() => setReadingModalOpen(false)}
+                    className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-all"
+                    disabled={isSubmittingReading}
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleReadingSubmit}
+                    disabled={!readingNote.trim() || isSubmittingReading}
+                    className={`px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0 ${isSubmittingReading ? 'cursor-wait' : ''}`}
+                  >
+                    {isSubmittingReading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Strict Coach 审阅中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>提交审核</span>
+                        <Icon name="send" className="text-sm" />
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setReadingModalOpen(false);
+                    setReadingNote('');
+                    setCheckResult(null);
+                  }}
+                  className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-all"
+                >
+                  我知道了
+                </button>
+              )}
             </div>
           </div>
         </div>
