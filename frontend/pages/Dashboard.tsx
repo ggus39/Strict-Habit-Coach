@@ -17,13 +17,14 @@ const getHabitIcon = (description: string) => {
 
 interface DashboardProps {
   setPage?: (page: Page) => void;
+  onSelectChallenge?: (id: number) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
+const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => {
   const { address, isConnected } = useAccount();
 
   //读取挑战数量
-  const { data: challengeCount } = useReadContract({
+  const { data: challengeCount, isLoading: loadingCount } = useReadContract({
     address: HABIT_ESCROW_ADDRESS,
     abi: HABIT_ESCROW_ABI,
     functionName: 'challengeCount',
@@ -34,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
   });
 
   // 读取每个挑战的详情 (Copied from ChallengeList)
-  const { data: challenge0 } = useReadContract({
+  const { data: challenge0, isLoading: loading0 } = useReadContract({
     address: HABIT_ESCROW_ADDRESS,
     abi: HABIT_ESCROW_ABI,
     functionName: 'getChallenge',
@@ -42,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
     query: { enabled: !!address && !!challengeCount && challengeCount > 0n },
   });
 
-  const { data: challenge1 } = useReadContract({
+  const { data: challenge1, isLoading: loading1 } = useReadContract({
     address: HABIT_ESCROW_ADDRESS,
     abi: HABIT_ESCROW_ABI,
     functionName: 'getChallenge',
@@ -50,13 +51,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
     query: { enabled: !!address && !!challengeCount && challengeCount > 1n },
   });
 
-  const { data: challenge2 } = useReadContract({
+  const { data: challenge2, isLoading: loading2 } = useReadContract({
     address: HABIT_ESCROW_ADDRESS,
     abi: HABIT_ESCROW_ABI,
     functionName: 'getChallenge',
     args: address && challengeCount && challengeCount > 2n ? [address, 2n] : undefined,
     query: { enabled: !!address && !!challengeCount && challengeCount > 2n },
   });
+
+  const isLoadingChallenges = loadingCount || loading0 || loading1 || loading2;
 
   const [activeChallenges, setActiveChallenges] = useState<(Challenge & { id: number })[]>([]);
 
@@ -83,7 +86,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
   const [checkResult, setCheckResult] = useState<string | null>(null);
 
   // 后端 API 基础路径
-  const API_BASE = 'https://frp-oil.com:16292/agent';
+  const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8900') + '/agent';
 
   // 1. 获取 GitHub 绑定状态
   const fetchGithubStatus = async () => {
@@ -152,7 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
       formData.append('challengeId', currentReadingChallengeId.toString());
       formData.append('content', readingNote);
 
-      const resp = await fetch(`${API_BASE}/reading/check`, {
+      const resp = await fetch(`${API_BASE}/agent/reading/check`, {
         method: 'POST',
         body: formData
       });
@@ -428,8 +431,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">全局数据看板</h1>
-          <p className="text-slate-400 mt-2 text-lg font-medium">查看所有习惯挑战的汇总表现与 Web3 资产状态。</p>
+          <h1 className="text-slate-900 dark:text-white text-3xl font-bold leading-tight mb-2">全局数据看板</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-normal">查看所有习惯挑战的汇总表现与 Web3 资产状态。</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-sm text-slate-500 bg-white border border-slate-100 px-4 py-2 rounded-full shadow-soft">
@@ -451,15 +454,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-surface p-6 rounded-2xl border border-slate-100 shadow-soft flex flex-col">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm flex flex-col hover:-translate-y-1 transition-transform duration-300">
           <div className="flex justify-between items-start mb-4">
             <span className="text-sm font-bold text-slate-400">总质押金额</span>
-            <div className="p-2 bg-sky-50 rounded-lg text-primary">
+            <div className="p-2 bg-sky-50 dark:bg-sky-900/20 rounded-lg text-primary">
               <Icon name="account_balance" className="text-xl" />
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-black text-slate-900 tracking-tight">0.05</span>
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">0.05</span>
             <span className="text-lg font-bold text-slate-400 mb-1">ETH</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-emerald-600">
@@ -467,30 +470,30 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
             <span>当前锁定中：1 个挑战</span>
           </div>
         </div>
-        <div className="bg-surface p-6 rounded-2xl border border-slate-100 shadow-soft flex flex-col">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm flex flex-col hover:-translate-y-1 transition-transform duration-300">
           <div className="flex justify-between items-start mb-4">
             <span className="text-sm font-bold text-slate-400">连续坚持天数</span>
-            <div className="p-2 bg-orange-50 rounded-lg text-orange-500">
+            <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-orange-500">
               <Icon name="local_fire_department" fill className="text-xl" />
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-black text-slate-900 tracking-tight">3</span>
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">3</span>
             <span className="text-lg font-bold text-slate-400 mb-1">天</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-slate-400">
             <span>距离下个奖励等级还差 4 天</span>
           </div>
         </div>
-        <div className="bg-surface p-6 rounded-2xl border border-slate-100 shadow-soft flex flex-col">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm flex flex-col hover:-translate-y-1 transition-transform duration-300">
           <div className="flex justify-between items-start mb-4">
             <span className="text-sm font-bold text-slate-400">累计获得 STRICT</span>
-            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-emerald-600">
               <Icon name="verified" fill className="text-xl" />
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-black text-slate-900 tracking-tight">500</span>
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">500</span>
             <span className="text-lg font-bold text-slate-400 mb-1">STRICT</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-emerald-600">
@@ -502,16 +505,29 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="md:col-span-8 flex flex-col gap-6">
-          <div className="bg-surface p-8 rounded-2xl border border-slate-100 shadow-soft">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-8 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Icon name="task_alt" className="text-primary" />
                 今日任务概览
               </h3>
               <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Today's Habits</span>
             </div>
             <div className="space-y-6">
-              {activeChallenges.length === 0 ? (
+              {isLoadingChallenges ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-6 p-2 rounded-xl border border-transparent">
+                      <div className="size-12 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 w-32 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                        <div className="h-3 w-20 bg-slate-50 dark:bg-slate-800/50 rounded animate-pulse" />
+                      </div>
+                      <div className="h-8 w-20 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : activeChallenges.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-sm">暂无进行中的挑战</div>
               ) : (
                 activeChallenges.map((challenge) => {
@@ -521,12 +537,16 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
                   const isReading = challenge.habitDescription.includes('阅读');
 
                   return (
-                    <div key={challenge.id} className="flex items-center gap-6 p-2 hover:bg-slate-50 rounded-xl transition-colors">
-                      <div className={`size-12 rounded-xl bg-${habitInfo.color}-50 text-${habitInfo.color}-600 flex items-center justify-center`}>
+                    <div
+                      key={challenge.id}
+                      onClick={() => onSelectChallenge?.(challenge.id)}
+                      className="flex items-center gap-6 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer group"
+                    >
+                      <div className={`size-12 rounded-xl bg-${habitInfo.color}-50 text-${habitInfo.color}-600 flex items-center justify-center group-hover:scale-105 transition-transform`}>
                         <Icon name={habitInfo.icon} />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-slate-700 text-base">
+                        <h4 className="font-bold text-slate-700 dark:text-slate-200 text-base">
                           {challenge.habitDescription.split(' - ')[0]}
                         </h4>
                       </div>
@@ -538,7 +558,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
                           </div>
                         ) : isReading ? (
                           <div
-                            onClick={() => handleOpenReadingModal(challenge.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenReadingModal(challenge.id);
+                            }}
                             className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold text-center cursor-pointer hover:bg-blue-100 transition-colors"
                           >
                             提交笔记
@@ -558,19 +581,19 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
         </div>
 
         <div className="md:col-span-4 flex flex-col gap-6">
-          <div className="bg-surface p-6 rounded-2xl border border-slate-100 shadow-soft">
-            <h3 className="text-base font-bold text-slate-900 mb-5 flex items-center gap-2">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2">
               <Icon name="sync" className="text-primary" />
               数据源连接
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800/50 transition-colors hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
                 <div className="flex items-center gap-3">
-                  <div className="size-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-slate-900">
+                  <div className="size-8 bg-white dark:bg-slate-700 rounded-lg shadow-sm flex items-center justify-center text-slate-900 dark:text-white">
                     <Icon name="terminal" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800">GitHub</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">GitHub</p>
                     <p className={`text-[10px] font-bold ${githubStatus.connected ? 'text-emerald-500' : 'text-slate-400'}`}>
                       {githubStatus.connected ? `@${githubStatus.username}` : '未连接'}
                     </p>
@@ -585,13 +608,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
               </div>
 
               {/* Strava Connection */}
-              <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+              <div className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800/50 transition-colors hover:bg-slate-100/50 dark:hover:bg-slate-800/50">
                 <div className="flex items-center gap-3">
-                  <div className="size-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-slate-900">
+                  <div className="size-8 bg-white dark:bg-slate-700 rounded-lg shadow-sm flex items-center justify-center text-slate-900 dark:text-white">
                     <Icon name="directions_run" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800">Strava</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Strava</p>
                     <p className={`text-[10px] font-bold ${stravaConnected ? 'text-emerald-500' : 'text-slate-400'}`}>
                       {stravaConnected ? '已连接' : '未连接'}
                     </p>
@@ -607,21 +630,24 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage }) => {
             </div>
           </div>
 
-          <div className="bg-sky-50/50 p-6 rounded-2xl border border-sky-100 shadow-soft">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="size-10 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                <Icon name="psychology" fill />
+          <div className="bg-sky-50/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-sky-100 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-12 bg-primary/10 rounded-full blur-2xl -mr-6 -mt-6 pointer-events-none group-hover:bg-primary/20 transition-colors"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="size-10 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                  <Icon name="psychology" fill />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">AI 状态更新</h4>
+                  <p className="text-[10px] text-primary font-bold uppercase tracking-widest">AI Agent</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">AI 状态更新</h4>
-                <p className="text-[10px] text-primary font-bold uppercase tracking-widest">AI Agent</p>
-              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+                {githubStatus.connected
+                  ? `你好 ${githubStatus.username}！我已经准备好监督你的代码库了。记得每天 Push 哦，否则你的质押金就有危险了！`
+                  : "请先连接 GitHub 账号。Money is Justice —— 只有通过代码证明你的进步，才能获得奖励。"}
+              </p>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed mb-4">
-              {githubStatus.connected
-                ? `你好 ${githubStatus.username}！我已经准备好监督你的代码库了。记得每天 Push 哦，否则你的质押金就有危险了！`
-                : "请先连接 GitHub 账号。Money is Justice —— 只有通过代码证明你的进步，才能获得奖励。"}
-            </p>
           </div>
         </div>
       </div>

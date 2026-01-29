@@ -5,10 +5,15 @@ import ChallengeList from './pages/ChallengeList';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import ChallengeDetail from './pages/ChallengeDetail';
+import BackgroundLayout from './components/BackgroundLayout';
 import { Page } from './types';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
+  const [currentPage, setCurrentPage] = useState<Page>(Page.CHALLENGE_LIST); // Default to App for dev, or Home
+  const [selectedChallengeId, setSelectedChallengeId] = useState<number | null>(null);
+
+  // Initial Check for Dev - logic to default to Home if preferred
+  // const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -17,11 +22,17 @@ function App() {
       case Page.CREATE_CHALLENGE:
         return <CreateChallenge setPage={setCurrentPage} />;
       case Page.CHALLENGE_LIST:
-        return <ChallengeList setPage={setCurrentPage} />;
+        return <ChallengeList setPage={setCurrentPage} onSelectChallenge={(id) => {
+          setSelectedChallengeId(id);
+          setCurrentPage(Page.CHALLENGE_DETAIL);
+        }} />;
       case Page.DASHBOARD:
-        return <Dashboard setPage={setCurrentPage} />;
+        return <Dashboard setPage={setCurrentPage} onSelectChallenge={(id) => {
+          setSelectedChallengeId(id);
+          setCurrentPage(Page.CHALLENGE_DETAIL);
+        }} />;
       case Page.CHALLENGE_DETAIL:
-        return <ChallengeDetail setPage={setCurrentPage} />;
+        return <ChallengeDetail setPage={setCurrentPage} challengeId={selectedChallengeId} />;
       default:
         return <ChallengeList setPage={setCurrentPage} />;
     }
@@ -29,23 +40,23 @@ function App() {
 
   if (currentPage === Page.HOME) {
     return (
-      <div className="font-sans">
+      <BackgroundLayout>
         {renderPage()}
-      </div>
+      </BackgroundLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-sans">
+    <BackgroundLayout>
       <Header currentPage={currentPage} setPage={setCurrentPage} />
-      <div className="flex-grow flex flex-col">
+      <div className="flex-grow flex flex-col w-full max-w-[1440px] mx-auto">
         {renderPage()}
       </div>
-      <footer className="mt-auto border-t border-slate-100 dark:border-slate-800 bg-surface-light dark:bg-surface-dark py-8">
+      <footer className="mt-auto border-t border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm py-8">
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2 opacity-40">
-            <span className="material-symbols-outlined text-xl">token</span>
-            <span className="text-sm font-bold">HabitStaker © 2024</span>
+          <div className="flex items-center gap-2 opacity-60">
+            <span className="material-symbols-outlined text-xl text-slate-400">token</span>
+            <span className="text-sm font-bold text-slate-500">HabitStaker © 2024</span>
           </div>
           <div className="flex gap-8 text-xs font-bold text-slate-400">
             <a className="hover:text-primary transition-colors" href="#">隐私政策</a>
@@ -54,7 +65,7 @@ function App() {
           </div>
         </div>
       </footer>
-    </div>
+    </BackgroundLayout>
   );
 }
 

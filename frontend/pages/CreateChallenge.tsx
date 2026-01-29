@@ -174,7 +174,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
             {/* Right Content */}
             <div className="flex-1 flex flex-col gap-6">
               {/* 习惯选择 */}
-              <section id="step-habit" className="bg-white dark:bg-surface-dark rounded-2xl p-8 shadow-soft border border-slate-100 dark:border-slate-800">
+              <section id="step-habit" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-8 shadow-sm border border-slate-200/50 dark:border-slate-800/50">
                 <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-8">选择你想养成的习惯</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {Object.entries(habitTypes).map(([key, habit]) => {
@@ -183,9 +183,9 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                       <div
                         key={key}
                         onClick={() => !isActive && setSelectedHabit(key as keyof typeof habitTypes)}
-                        className={`group cursor-pointer rounded-2xl p-6 transition-all border-2 relative 
-                        ${isActive ? 'opacity-50 cursor-not-allowed bg-slate-100 border-transparent grayscale' :
-                            selectedHabit === key ? 'bg-slate-50/50 border-primary card-selected-icon' : 'bg-slate-50/50 border-transparent hover:border-slate-200'}`}
+                        className={`group cursor-pointer rounded-2xl p-6 transition-all border relative 
+                        ${isActive ? 'opacity-50 cursor-not-allowed bg-slate-100/50 border-transparent grayscale' :
+                            selectedHabit === key ? 'bg-primary/5 border-primary card-selected-icon' : 'bg-slate-50/50 border-transparent hover:border-slate-200 hover:bg-white/50'}`}
                       >
                         {isActive && (
                           <div className="absolute top-2 right-2 px-2 py-0.5 bg-slate-200 text-slate-500 text-[10px] rounded font-bold">
@@ -196,7 +196,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                         <div className={`mb-4 aspect-square w-full overflow-hidden rounded-xl bg-${habit.color}-100/50 flex items-center justify-center`}>
                           <span className={`material-symbols-outlined text-4xl text-${habit.color}-500`}>{habit.icon}</span>
                         </div>
-                        <h4 className="mb-1 text-base font-bold text-slate-900">{habit.name}</h4>
+                        <h4 className="mb-1 text-base font-bold text-slate-900 dark:text-white">{habit.name}</h4>
                         <p className="text-xs text-slate-500">{habit.description}</p>
                       </div>
                     )
@@ -205,14 +205,14 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
               </section>
 
               {/* 目标设定 */}
-              <section id="step-goal" className="bg-white dark:bg-surface-dark rounded-2xl p-8 shadow-soft border border-slate-100 dark:border-slate-800">
+              <section id="step-goal" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-8 shadow-sm border border-slate-200/50 dark:border-slate-800/50">
                 <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-8">设定挑战目标</h3>
                 <div className="flex flex-col gap-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">目标天数</label>
                     <div className="relative">
                       <input
-                        className="block w-full rounded-xl border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-primary text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-primary text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all focus:bg-white dark:focus:bg-slate-800"
                         type="number"
                         value={targetDays}
                         onChange={(e) => setTargetDays(Number(e.target.value))}
@@ -229,19 +229,19 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
               </section>
 
               {/* 质押金额 */}
-              <section id="step-stake" className="bg-white dark:bg-surface-dark rounded-2xl p-8 shadow-soft border border-slate-100 dark:border-slate-800">
+              <section id="step-stake" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-8 shadow-sm border border-slate-200/50 dark:border-slate-800/50">
                 <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-8">承诺金额 (Staking)</h3>
-                <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl p-8">
+                <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl p-8 border border-slate-100 dark:border-slate-700/50">
                   <div className="flex justify-between items-end mb-8">
                     <span className="text-sm text-slate-500 font-medium">质押金额</span>
                     <div className="text-right">
                       <span className="text-3xl font-display font-black text-primary">{stakeAmount}</span>
-                      <span className="text-base font-bold text-slate-900 ml-1">ETH</span>
+                      <span className="text-base font-bold text-slate-900 dark:text-white ml-1">ETH</span>
                     </div>
                   </div>
                   <div className="mb-10">
                     <input
-                      className="w-full"
+                      className="w-full cursor-pointer accent-primary"
                       max="1"
                       min="0.01"
                       step="0.01"
@@ -254,10 +254,10 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                       <span>1 ETH</span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-6">
+                  <div className="flex items-center justify-between border-t border-slate-200/50 dark:border-slate-700/50 pt-6">
                     <div className="flex flex-col">
                       <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">锁定期</span>
-                      <span className="text-sm font-bold text-slate-900">{targetDays} 天</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">{targetDays} 天</span>
                     </div>
                     <div className="flex flex-col text-right">
                       <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">预计奖励</span>
@@ -268,7 +268,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
               </section>
 
               {/* 惩罚类型选择 */}
-              <section id="step-penalty" className="bg-white dark:bg-surface-dark rounded-2xl p-8 shadow-soft border border-slate-100 dark:border-slate-800 mb-4">
+              <section id="step-penalty" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-8 shadow-sm border border-slate-200/50 dark:border-slate-800/50 mb-4">
                 <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-8">如果失败，资金去向?</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
@@ -284,16 +284,16 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                         name="penalty"
                         type="radio"
                       />
-                      <div className="h-full rounded-2xl border-2 border-slate-100 bg-white p-5 transition-all peer-checked:border-primary peer-checked:bg-sky-50/30">
+                      <div className="h-full rounded-2xl border border-slate-200/60 dark:border-slate-700 bg-white/40 dark:bg-slate-800/40 p-5 transition-all peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:shadow-sm hover:bg-white/60 dark:hover:bg-slate-800/60">
                         <div className="flex justify-between items-start mb-4">
                           <div className={`size-9 rounded-full bg-${option.color}-50 text-${option.color}-500 flex items-center justify-center`}>
                             <span className="material-symbols-outlined text-xl">{option.icon}</span>
                           </div>
-                          <div className="text-primary opacity-0 peer-checked:opacity-100">
+                          <div className="text-primary opacity-0 peer-checked:opacity-100 transition-opacity">
                             <span className="material-symbols-outlined text-xl font-variation-fill">check_circle</span>
                           </div>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-900 mb-2">{option.title}</h4>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-2">{option.title}</h4>
                         <p className="text-[11px] text-slate-500 leading-relaxed">{option.desc}</p>
                       </div>
                     </label>

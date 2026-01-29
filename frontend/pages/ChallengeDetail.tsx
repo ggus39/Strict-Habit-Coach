@@ -1,12 +1,66 @@
 import React from 'react';
 import { Icon } from '../components/Icon';
 import { Page } from '../types';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { HABIT_ESCROW_ABI, HABIT_ESCROW_ADDRESS, Challenge, ChallengeStatus } from '../contracts';
+import { formatEther } from 'viem';
 
 interface ChallengeDetailProps {
   setPage?: (page: Page) => void;
+  challengeId?: number | null;
 }
 
-const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
+const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage, challengeId }) => {
+  const { address } = useAccount();
+  const { writeContract, isPending } = useWriteContract();
+
+  // Read Challenge Data
+  const { data: challengeData, isLoading } = useReadContract({
+    address: HABIT_ESCROW_ADDRESS,
+    abi: HABIT_ESCROW_ABI,
+    functionName: 'getChallenge',
+    args: address && challengeId !== undefined && challengeId !== null ? [address, BigInt(challengeId)] : undefined,
+    query: { enabled: !!address && challengeId !== undefined && challengeId !== null },
+  });
+
+  const challenge = challengeData as unknown as Challenge | undefined;
+
+  if (!address || challengeId === undefined || challengeId === null) {
+    return <div className="p-10 text-center">请先选择一个挑战</div>;
+  }
+
+  if (isLoading || !challenge) {
+    return (
+      <div className="max-w-[1200px] mx-auto p-10 flex justify-center">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Calculations
+  const now = Math.floor(Date.now() / 1000);
+  const startTime = Number(challenge.startTime);
+  const daysPassed = Math.floor((now - startTime) / 86400); // 1 day = 86400s
+  const targetDays = Number(challenge.targetDays);
+  const completedDays = Number(challenge.completedDays);
+
+  // Days Left (min 0)
+  const daysLeft = Math.max(0, targetDays - daysPassed);
+
+  // Progress %
+  // For the gauge, let's use completed days vs target.
+  const completionPercent = Math.min(100, (completedDays / targetDays) * 100);
+
+  const isReading = challenge.habitDescription.includes('阅读');
+  const isRunning = challenge.habitDescription.includes('跑步');
+  const isCoding = challenge.habitDescription.includes('编程');
+
+  const habitTypeColor = isReading ? 'blue' : isRunning ? 'orange' : isCoding ? 'purple' : 'emerald';
+  const habitIcon = isReading ? 'menu_book' : isRunning ? 'directions_run' : isCoding ? 'code' : 'trending_up';
+
+  // Calendar Log Generation
+  const currentDayIndex = daysPassed + 1;
+
   return (
     <div className="animate-fade-in-up max-w-[1200px] mx-auto px-6 py-8">
       {/* Breadcrumb & Title */}
@@ -14,12 +68,17 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
         <div
           className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide cursor-pointer hover:text-slate-600 transition-colors"
         >
-          <span onClick={() => setPage && setPage(Page.CHALLENGE_LIST)}>挑战列表</span>
+          <span onClick={() => setPage && setPage(Page.DASHBOARD)}>返回看板</span>
           <Icon name="chevron_right" className="text-base" />
-          <span>30天沉浸式阅读挑战</span>
+          <span>挑战详情</span>
         </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900">30天阅读挑战详情</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
+            <div className={`p-2 rounded-xl bg-${habitTypeColor}-50 text-${habitTypeColor}-600`}>
+              <Icon name={habitIcon} />
+            </div>
+            {challenge.habitDescription}
+          </h1>
           <div className="flex gap-3">
             <button className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-full text-sm hover:bg-slate-50 transition-colors flex items-center gap-2">
               <Icon name="share" className="text-lg" /> 分享进度
@@ -46,7 +105,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
                 fill="transparent"
                 className="text-slate-100"
               />
-              {/* Progress Circle (approx 70% for 21 days left out of 30) */}
+              {/* Progress Circle */}
               <circle
                 cx="128"
                 cy="128"
@@ -55,13 +114,13 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
                 strokeWidth="16"
                 fill="transparent"
                 strokeDasharray={2 * Math.PI * 100}
-                strokeDashoffset={2 * Math.PI * 100 * (1 - 0.7)}
+                strokeDashoffset={2 * Math.PI * 100 * (1 - completionPercent / 100)}
                 strokeLinecap="round"
-                className="text-primary transition-all duration-1000 ease-out"
+                className={`text-${habitTypeColor}-500 transition-all duration-1000 ease-out`}
               />
             </svg>
             <div className="absolute flex flex-col items-center">
-              <span className="text-6xl font-black text-slate-900 tracking-tighter">21</span>
+              <span className="text-6xl font-black text-slate-900 tracking-tighter">{daysLeft}</span>
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Days Left</span>
             </div>
           </div>
@@ -69,16 +128,17 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
           <div className="w-full grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-slate-50">
             <div className="text-center">
               <p className="text-xs text-slate-400 font-bold mb-1">总期限</p>
-              <p className="text-lg font-black text-slate-900">30 天</p>
+              <p className="text-lg font-black text-slate-900">{targetDays} 天</p>
             </div>
             <div className="text-center border-l border-slate-100">
-              <p className="text-xs text-slate-400 font-bold mb-1">当前连胜</p>
-              <p className="text-lg font-black text-emerald-500">7 天</p>
+              <p className="text-xs text-slate-400 font-bold mb-1">已打卡</p>
+              <p className={`text-lg font-black text-${habitTypeColor}-500`}>{completedDays} 天</p>
             </div>
             <div className="text-center border-l border-slate-100">
-              <p className="text-xs text-slate-400 font-bold mb-1">数据同步</p>
+              <p className="text-xs text-slate-400 font-bold mb-1">数据源</p>
               <p className="text-sm font-bold text-slate-900 flex items-center justify-center gap-1">
-                Apple Books <span className="block size-2 rounded-full bg-emerald-500"></span>
+                {isReading ? 'DeepSeek AI' : isRunning ? 'Strava' : 'GitHub'}
+                <span className="block size-2 rounded-full bg-emerald-500"></span>
               </p>
             </div>
           </div>
@@ -95,7 +155,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
                 <span className="size-2 rounded-full bg-emerald-500"></span> 已达标
               </div>
               <div className="flex items-center gap-1">
-                <span className="size-2 rounded-full bg-slate-200"></span> 待打卡
+                <span className="size-2 rounded-full bg-slate-200"></span> 待打卡 / 未达标
               </div>
             </div>
           </div>
@@ -107,30 +167,26 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
             ))}
           </div>
           <div className="grid grid-cols-7 gap-3">
-            {/* Empty slots for offset */}
-            <div className="aspect-square"></div>
-            <div className="aspect-square"></div>
+            {/* Simple visual rendering of days */}
+            {Array.from({ length: targetDays }).map((_, i) => {
+              const dayNum = i + 1;
+              const isCompleted = dayNum <= completedDays;
+              const isToday = dayNum === currentDayIndex;
+              const isMissed = !isCompleted && dayNum < currentDayIndex;
 
-            {/* Days 1-9 (Completed) */}
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(day => (
-              <div key={day} className={`aspect-square rounded-xl flex items-center justify-center text-sm font-bold ${day === 4 || day === 9 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-emerald-50 text-emerald-600'
-                }`}>
-                {day}
-              </div>
-            ))}
+              let bgClass = "bg-slate-50 text-slate-300";
+              if (isCompleted) bgClass = "bg-emerald-50 text-emerald-600 border border-emerald-100";
+              if (isMissed) bgClass = "bg-red-50 text-red-300 border border-red-50";
+              if (isToday) bgClass = "bg-sky-50 text-primary border-2 border-dashed border-primary";
 
-            {/* Day 10 (Today/Current) */}
-            <div className="aspect-square rounded-xl flex items-center justify-center text-sm font-bold border-2 border-dashed border-primary text-primary bg-sky-50 relative">
-              10
-              <span className="absolute -top-1 -right-1 size-2 bg-primary rounded-full"></span>
-            </div>
-
-            {/* Days 11-21 (Future) */}
-            {Array.from({ length: 11 }, (_, i) => i + 11).map(day => (
-              <div key={day} className="aspect-square rounded-xl flex items-center justify-center text-sm font-bold bg-slate-50 text-slate-300">
-                {day}
-              </div>
-            ))}
+              return (
+                <div key={dayNum} className={`aspect-square rounded-xl flex items-center justify-center text-sm font-bold ${bgClass} relative`}>
+                  {dayNum}
+                  {isToday && <span className="absolute -top-1 -right-1 size-2 bg-primary rounded-full"></span>}
+                  {isCompleted && <Icon name="check" className="text-xs ml-0.5" />}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -146,7 +202,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               <div className="bg-slate-50 rounded-xl p-6">
                 <p className="text-xs font-bold text-slate-400 mb-2">已质押金额</p>
-                <p className="text-3xl font-black text-slate-800">200.00 <span className="text-sm font-bold text-slate-400">USDT</span></p>
+                <p className="text-3xl font-black text-slate-800">{formatEther(challenge.stakeAmount)} <span className="text-sm font-bold text-slate-400">ETH</span></p>
               </div>
               <div className="bg-emerald-50 rounded-xl p-6">
                 <p className="text-xs font-bold text-emerald-600 mb-2">预估年化收益</p>
@@ -162,7 +218,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
               <div>
                 <h4 className="text-sm font-bold text-red-500 mb-1">惩罚规则警示</h4>
                 <p className="text-xs text-red-400 leading-relaxed font-medium">
-                  若今日未能在 24:00 前同步阅读数据，系统将自动扣除当日质押份额 (约 <span className="underline decoration-red-300 cursor-pointer">6.67 USDT</span>) 作为惩罚并捐赠至 Web3 公共物品基金。
+                  若今日未能在 24:00 前同步数据，系统将自动扣除当日质押份额 (约 <span className="underline decoration-red-300 cursor-pointer">{Number(formatEther(challenge.stakeAmount)) / targetDays} ETH</span>) 作为惩罚并捐赠至 Web3 公共物品基金。
                 </p>
               </div>
             </div>
@@ -184,20 +240,49 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
                 <p className="text-[10px] text-slate-400">违约金将转入 DAO 金库</p>
               </div>
               <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100">
-                <p className="text-xs font-bold text-slate-400 mb-2">锁定截止日期</p>
-                <p className="text-xl font-black text-slate-800 mb-1">2024-05-30</p>
-                <p className="text-[10px] text-slate-400">挑战结束后可全额解锁</p>
+                <p className="text-xs font-bold text-slate-400 mb-2">开始时间</p>
+                <p className="text-xl font-black text-slate-800 mb-1">{new Date(startTime * 1000).toLocaleDateString()}</p>
+                <p className="text-[10px] text-slate-400">挑战正式生效日期</p>
               </div>
               <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100">
                 <p className="text-xs font-bold text-slate-400 mb-2">累计已获奖励</p>
-                <p className="text-xl font-black text-emerald-500 mb-1">14.85 <span className="text-xs text-slate-400">USDT</span></p>
+                <p className="text-xl font-black text-emerald-500 mb-1">{(Number(formatEther(challenge.stakeAmount)) * 0.1).toFixed(4)} <span className="text-xs text-slate-400">ETH</span></p>
                 <p className="text-[10px] text-slate-400">包含节点激励与对赌收益</p>
               </div>
             </div>
 
-            <button className="w-full mt-6 bg-slate-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
-              <Icon name="settings_suggest" className="text-xl" /> 管理质押
-            </button>
+            {completedDays >= targetDays ? (
+              <button
+                onClick={() => {
+                  if (!address) return;
+                  writeContract({
+                    address: HABIT_ESCROW_ADDRESS,
+                    abi: HABIT_ESCROW_ABI,
+                    functionName: 'claimReward',
+                    args: [BigInt(challengeId!)],
+                    account: address,
+                    chain: undefined
+                  });
+                }}
+                disabled={isPending}
+                className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <>
+                    <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    领取中...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="emoji_events" className="text-xl" /> 领取挑战奖励
+                  </>
+                )}
+              </button>
+            ) : (
+              <button className="w-full mt-6 bg-slate-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
+                <Icon name="settings_suggest" className="text-xl" /> 管理质押
+              </button>
+            )}
           </div>
         </div>
 
@@ -217,7 +302,10 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
                   <path d="M0 0 L20 0 L20 20 Z" />
                 </svg>
                 <p className="text-sm text-slate-600 italic leading-relaxed font-medium">
-                  “嗨！你已经连续坚持阅读 7 天了，这是一个非常了不起的里程碑。根据我们的 AI 模型分析，度过前 10 天是习惯成型的关键。保持现在的节奏，你离彻底养成阅读习惯仅剩最后一步！”
+                  {completedDays > 0 ?
+                    `“不错！你已经坚持了 ${completedDays} 天。根据 DeepSeek 的分析，你的行为模式正在固化。继续保持，Web3 的奖励只属于坚持者。”` :
+                    `“从第一天开始才是最难的。我已经准备好见证你的蜕变了，${address?.slice(0, 6)}...${address?.slice(-4)}。别让我失望。”`
+                  }
                 </p>
               </div>
             </div>
@@ -227,7 +315,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage }) => {
                 <div className="flex -space-x-2">
                   <div className="size-8 rounded-full bg-slate-200 border-2 border-white"></div>
                   <div className="size-8 rounded-full bg-slate-300 border-2 border-white"></div>
-                  <div className="size-8 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">+12</div>
+                  <div className="size-8 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">AI</div>
                 </div>
                 <button className="text-xs font-bold text-sky-500 flex items-center gap-1 hover:text-sky-600">
                   查看 AI 报告 <Icon name="trending_up" className="text-sm" />

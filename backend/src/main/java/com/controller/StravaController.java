@@ -21,6 +21,9 @@ public class StravaController {
     @Value("${server.url:http://localhost:8080}")
     private String serverUrl;
 
+    @Value("${frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
     @GetMapping("/auth/url")
     public Map<String, String> getAuthUrl(@RequestParam String walletAddress) {
         // Callback URL 包含钱包地址状态或类似信息
@@ -30,9 +33,7 @@ public class StravaController {
         // 或者更简单：前端调用此接口，获取 URL，用户点击，最终重定向回后端 /callback。
         // 我们将追加 walletAddress 作为 state。
         
-        String callbackUrl = serverUrl + "/agent/strava/callback?wallet=" + walletAddress;
-        // 理想情况下我们应该对此进行编码。
-        
+
         String url = stravaService.getAuthUrl(serverUrl + "/agent/strava/callback");
         // 我们需要通过 state 参数传递钱包地址
         url += "&state=" + walletAddress;
@@ -45,16 +46,16 @@ public class StravaController {
     @GetMapping("/callback")
     public RedirectView callback(@RequestParam String code, @RequestParam(required = false) String state) {
         if (state == null) {
-            return new RedirectView("http://localhost:3000?error=missing_wallet"); // 暂时硬编码前端地址
+            return new RedirectView(frontendUrl + "?error=missing_wallet"); 
         }
         
         try {
             stravaService.handleCallback(state, code);
             // 重定向回前端
-            return new RedirectView("http://localhost:3000/dashboard?strava=connected"); 
+            return new RedirectView(frontendUrl + "/dashboard?strava=connected"); 
         } catch (Exception e) {
             e.printStackTrace();
-            return new RedirectView("http://localhost:3000/dashboard?strava=error"); 
+            return new RedirectView(frontendUrl + "/dashboard?strava=error"); 
         }
     }
 
