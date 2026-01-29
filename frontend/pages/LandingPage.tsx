@@ -49,7 +49,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                                 <span className="text-primary block mt-2">用质押见证成长</span>
                             </h1>
                             <p className="text-lg md:text-xl text-slate-600 dark:text-gray-400 max-w-[540px]">
-                                结合 AI 监督与 Web3 质押机制，让每一次坚持都有价值。支持 Strava、Duolingo 数据自动同步，开启你的对赌成长之旅。
+                                结合 AI Agent 自动支付 与 Web3 质押机制。由拥有独立钱包的 AI 代理自主验证并结算，开启智能体经济时代的自我承诺之旅。
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <button
@@ -103,14 +103,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                                     <span className="material-symbols-outlined text-3xl">sync</span>
                                 </div>
                                 <h3 className="text-xl font-bold mb-3">AI 实时同步</h3>
-                                <p className="text-slate-600 dark:text-gray-400">深度集成 Duolingo、Strava 与 GitHub，通过 AI 引擎自动验证行为数据，无需手动繁琐打卡。</p>
+                                <p className="text-slate-600 dark:text-gray-400">深度集成Strava 与 GitHub，通过 AI 引擎自动验证行为数据，无需手动繁琐打卡。</p>
                             </div>
                             <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow group">
                                 <div className="size-14 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                     <span className="material-symbols-outlined text-3xl">lock</span>
                                 </div>
-                                <h3 className="text-xl font-bold mb-3">资产对赌机制</h3>
-                                <p className="text-slate-600 dark:text-gray-400">质押 100U 或更多开启挑战，利用沉没成本效应与损失厌恶心理，激发你最强的执行力。</p>
+                                <h3 className="text-xl font-bold mb-3">资产承诺机制</h3>
+                                <p className="text-slate-600 dark:text-gray-400">质押至少0.1ETH或更多开启挑战，利用沉没成本效应与损失厌恶心理，激发你最强的执行力。</p>
                             </div>
                             <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow group">
                                 <div className="size-14 bg-orange-100 text-orange-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -140,7 +140,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                                     <span className="material-symbols-outlined text-3xl text-primary">payments</span>
                                 </div>
                                 <h4 className="text-lg font-bold mb-2">2. 存入质押金</h4>
-                                <p className="text-sm text-slate-600">在链上安全锁定您的挑战对赌金</p>
+                                <p className="text-sm text-slate-600">在链上安全锁定您的挑战承诺金</p>
                             </div>
                             <div className="relative flex-1 text-center group">
                                 <div className="size-24 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md z-10 relative border-4 border-slate-50 dark:border-gray-900">

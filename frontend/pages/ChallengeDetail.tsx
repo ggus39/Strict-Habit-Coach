@@ -228,7 +228,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage, challengeId 
           <div className="bg-surface rounded-2xl p-8 border border-slate-100 shadow-soft">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-sky-500 flex items-center gap-2">
-                <Icon name="gavel" className="text-sky-500" /> 对赌协议详情
+                <Icon name="gavel" className="text-sky-500" /> 承诺协议详情
               </h3>
               <span className="px-3 py-1 bg-sky-50 text-sky-500 rounded-full text-[10px] font-bold uppercase tracking-wide">Protocol Active</span>
             </div>
@@ -247,7 +247,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage, challengeId 
               <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100">
                 <p className="text-xs font-bold text-slate-400 mb-2">累计已获奖励</p>
                 <p className="text-xl font-black text-emerald-500 mb-1">{(Number(formatEther(challenge.stakeAmount)) * 0.1).toFixed(4)} <span className="text-xs text-slate-400">ETH</span></p>
-                <p className="text-[10px] text-slate-400">包含节点激励与对赌收益</p>
+                <p className="text-[10px] text-slate-400">包含节点激励与承诺收益</p>
               </div>
             </div>
 

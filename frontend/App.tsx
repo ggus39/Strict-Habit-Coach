@@ -59,7 +59,7 @@ function App() {
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 opacity-60">
             <span className="material-symbols-outlined text-xl text-slate-400">token</span>
-            <span className="text-sm font-bold text-slate-500">HabitStaker © 2024</span>
+            <span className="text-sm font-bold text-slate-500">HabitStaker © 2026</span>
           </div>
           <div className="flex gap-8 text-xs font-bold text-slate-400">
             <button className="hover:text-primary transition-colors" onClick={() => setShowPrivacy(true)}>隐私政策</button>

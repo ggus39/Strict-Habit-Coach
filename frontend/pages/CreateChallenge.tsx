@@ -158,14 +158,28 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                 ))}
               </div>
 
-              <div className="mt-12 bg-sky-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-sky-100 dark:border-slate-700">
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-primary text-2xl font-variation-fill">lightbulb</span>
-                  <div>
-                    <h4 className="text-primary font-bold mb-1">小贴士</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      研究表明，当有真金白银作为赌注时，习惯养成的成功率会提高 3 倍。
-                    </p>
+              <div className="mt-12 flex flex-col gap-4">
+                <div className="bg-sky-50 dark:bg-sky-900/20 p-5 rounded-2xl border border-sky-100 dark:border-sky-800/50">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-primary text-xl font-variation-fill mt-0.5">psychology</span>
+                    <div>
+                      <h4 className="text-primary font-bold mb-1 text-sm">损失厌恶效应</h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        行为心理学发现，人们由于"害怕损失"产生的行动力，是"渴望获得"的 2.5 倍。哪怕只是质押 0.01 ETH，也能显著提升完成率。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-emerald-600 text-xl font-variation-fill mt-0.5">verified</span>
+                    <div>
+                      <h4 className="text-emerald-700 dark:text-emerald-400 font-bold mb-1 text-sm">21天习惯法则</h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        大脑建立新的神经通路通常需要 21 天。建议将首个挑战设定为 21 天，这是养成终身习惯的最佳起点。
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
