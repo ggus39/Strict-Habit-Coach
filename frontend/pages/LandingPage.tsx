@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Page } from '../types';
+import { PrivacyPolicyModal, TermsModal, MechanismModal } from '../components/LegalModals';
 
 interface LandingPageProps {
     setPage: (page: Page) => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const [showMechanism, setShowMechanism] = useState(false);
+
     return (
         <div className="">
             <header className="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-slate-200/30 px-6 md:px-20 lg:px-40 py-4">
@@ -173,28 +178,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                         <div>
                             <h5 className="font-bold mb-6">产品</h5>
                             <ul className="space-y-4 text-sm text-slate-600 dark:text-gray-400">
-                                <li><a className="hover:text-primary" href="#">挑战列表</a></li>
-                                <li><a className="hover:text-primary" href="#">数据看板</a></li>
-                                <li><a className="hover:text-primary" href="#">AI 教练</a></li>
-                                <li><a className="hover:text-primary" href="#">质押机制</a></li>
+                                <li><button className="hover:text-primary transition-colors" onClick={() => setPage(Page.CHALLENGE_LIST)}>挑战列表</button></li>
+                                <li><button className="hover:text-primary transition-colors" onClick={() => setPage(Page.DASHBOARD)}>数据看板</button></li>
+                                <li><button className="hover:text-primary transition-colors" onClick={() => setShowMechanism(true)}>质押机制</button></li>
                             </ul>
                         </div>
                         <div>
                             <h5 className="font-bold mb-6">社区</h5>
                             <ul className="space-y-4 text-sm text-slate-600 dark:text-gray-400">
-                                <li><a className="hover:text-primary" href="#">Discord</a></li>
-                                <li><a className="hover:text-primary" href="#">Twitter</a></li>
-                                <li><a className="hover:text-primary" href="#">Telegram</a></li>
-                                <li><a className="hover:text-primary" href="#">Medium</a></li>
+                                <li><a className="hover:text-primary transition-colors" href="#">Discord</a></li>
+                                <li><a className="hover:text-primary transition-colors" href="#">Twitter</a></li>
+                                <li><a className="hover:text-primary transition-colors" href="#">Telegram</a></li>
+                                <li><a className="hover:text-primary transition-colors" href="#">Medium</a></li>
                             </ul>
                         </div>
                         <div>
                             <h5 className="font-bold mb-6">关于</h5>
                             <ul className="space-y-4 text-sm text-slate-600 dark:text-gray-400">
-                                <li><a className="hover:text-primary" href="#">关于我们</a></li>
-                                <li><a className="hover:text-primary" href="#">品牌资料</a></li>
-                                <li><a className="hover:text-primary" href="#">联系我们</a></li>
-                                <li><a className="hover:text-primary" href="#">隐私政策</a></li>
+                                <li><button className="hover:text-primary transition-colors" onClick={() => setShowPrivacy(true)}>隐私政策</button></li>
                             </ul>
                         </div>
                     </div>
@@ -207,6 +208,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                     </div>
                 </div>
             </footer>
+
+            <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+            <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+            <MechanismModal isOpen={showMechanism} onClose={() => setShowMechanism(false)} />
         </div>
     );
 };

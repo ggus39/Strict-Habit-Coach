@@ -142,7 +142,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                   { step: 1, title: '习惯选择', desc: '选择你想养成的习惯' },
                   { step: 2, title: '目标设定', desc: '设定挑战天数' },
                   { step: 3, title: '质押金额', desc: '承诺你的决心' },
-                  { step: 4, title: '失败去向', desc: '如果未完成...' },
+                  { step: 4, title: '失败去向', desc: '设置惩罚方式' },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-4">
                     <div className="size-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-md shadow-primary/20">
@@ -215,7 +215,10 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                         className="block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 px-4 py-3 text-slate-900 dark:text-white focus:border-primary focus:ring-primary text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all focus:bg-white dark:focus:bg-slate-800"
                         type="number"
                         value={targetDays}
-                        onChange={(e) => setTargetDays(Number(e.target.value))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setTargetDays(val < 7 ? 7 : val);
+                        }}
                         min={7} // 合约限制最少7天
                         max={365}
                       />

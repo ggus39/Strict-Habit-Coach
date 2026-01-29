@@ -4,7 +4,8 @@ import { Icon } from '../components/Icon';
 
 import { Page } from '../types';
 import { useAccount, useReadContract } from 'wagmi';
-import { HABIT_ESCROW_ABI, HABIT_ESCROW_ADDRESS, Challenge, ChallengeStatus } from '../contracts';
+import { HABIT_ESCROW_ABI, HABIT_ESCROW_ADDRESS, STRICT_TOKEN_ABI, STRICT_TOKEN_ADDRESS, Challenge, ChallengeStatus } from '../contracts';
+import { formatEther } from 'viem';
 import { useState, useEffect } from 'react';
 
 // 习惯图标映射
@@ -22,6 +23,17 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => {
   const { address, isConnected } = useAccount();
+
+  // 读取 STRICT 代币余额
+  const { data: strictBalance } = useReadContract({
+    address: STRICT_TOKEN_ADDRESS,
+    abi: STRICT_TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
 
   //读取挑战数量
   const { data: challengeCount, isLoading: loadingCount } = useReadContract({
@@ -462,12 +474,16 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">0.05</span>
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              {activeChallenges.length > 0
+                ? parseFloat(formatEther(activeChallenges.reduce((acc, c) => acc + c.stakeAmount, 0n))).toFixed(4)
+                : '0.00'}
+            </span>
             <span className="text-lg font-bold text-slate-400 mb-1">ETH</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-emerald-600">
             <Icon name="payments" className="text-sm" />
-            <span>当前锁定中：1 个挑战</span>
+            <span>当前锁定中：{activeChallenges.length} 个挑战</span>
           </div>
         </div>
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm flex flex-col hover:-translate-y-1 transition-transform duration-300">
@@ -478,11 +494,19 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">3</span>
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              {activeChallenges.length > 0
+                ? Math.max(...activeChallenges.map(c => Number(c.completedDays)))
+                : 0}
+            </span>
             <span className="text-lg font-bold text-slate-400 mb-1">天</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-slate-400">
-            <span>距离下个奖励等级还差 4 天</span>
+            <span>
+              距离下个奖励等级还差 {activeChallenges.length > 0
+                ? 7 - (Math.max(...activeChallenges.map(c => Number(c.completedDays))) % 7)
+                : 7} 天
+            </span>
           </div>
         </div>
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 shadow-sm flex flex-col hover:-translate-y-1 transition-transform duration-300">
@@ -493,7 +517,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">500</span>
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              {strictBalance ? parseFloat(formatEther(strictBalance as bigint)).toFixed(0) : '0'}
+            </span>
             <span className="text-lg font-bold text-slate-400 mb-1">STRICT</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-emerald-600">

@@ -6,11 +6,14 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import ChallengeDetail from './pages/ChallengeDetail';
 import BackgroundLayout from './components/BackgroundLayout';
+import { PrivacyPolicyModal, TermsModal } from './components/LegalModals';
 import { Page } from './types';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>(Page.CHALLENGE_LIST); // Default to App for dev, or Home
   const [selectedChallengeId, setSelectedChallengeId] = useState<number | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   // Initial Check for Dev - logic to default to Home if preferred
   // const [currentPage, setCurrentPage] = useState<Page>(Page.HOME);
@@ -49,7 +52,7 @@ function App() {
   return (
     <BackgroundLayout>
       <Header currentPage={currentPage} setPage={setCurrentPage} />
-      <div className="flex-grow flex flex-col w-full max-w-[1440px] mx-auto">
+      <div className="flex-grow flex flex-col w-full max-w-[1440px] mx-auto pt-24">
         {renderPage()}
       </div>
       <footer className="mt-auto border-t border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm py-8">
@@ -59,12 +62,14 @@ function App() {
             <span className="text-sm font-bold text-slate-500">HabitStaker © 2024</span>
           </div>
           <div className="flex gap-8 text-xs font-bold text-slate-400">
-            <a className="hover:text-primary transition-colors" href="#">隐私政策</a>
-            <a className="hover:text-primary transition-colors" href="#">使用条款</a>
-            <a className="hover:text-primary transition-colors" href="#">API 文档</a>
+            <button className="hover:text-primary transition-colors" onClick={() => setShowPrivacy(true)}>隐私政策</button>
+            <button className="hover:text-primary transition-colors" onClick={() => setShowTerms(true)}>使用条款</button>
           </div>
         </div>
       </footer>
+
+      <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
     </BackgroundLayout>
   );
 }
