@@ -167,7 +167,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
       formData.append('challengeId', currentReadingChallengeId.toString());
       formData.append('content', readingNote);
 
-      const resp = await fetch(`${API_BASE}/agent/reading/check`, {
+      const resp = await fetch(`${API_BASE}/reading/check`, {
         method: 'POST',
         body: formData
       });
