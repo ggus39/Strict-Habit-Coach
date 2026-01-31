@@ -136,7 +136,7 @@ export const MechanismModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
                 <p>HabitStaker 的运行基于一套不可篡改的智能合约规则：</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                     <li><strong>质押 (Stake):</strong> 用户在开启挑战时存入 KITE 到 HabitEscrow 合约。</li>
-                    <li><strong>验证 (Verify):</strong> AI Agent 每日根据 GitHub/Strava 数据验证您的行为，并上链记录。</li>
+                    <li><strong>验证 (Verify):</strong> AI Agent 每日根据 GitHub/Strava、阅读笔记 数据验证您的行为，并上链记录。</li>
                     <li><strong>结算 (Settlement):</strong>
                         <ul className="list-disc pl-5 mt-1 text-xs text-slate-500">
                             <li>成功完成：取回本金 + 获得 STRICT 代币奖励。</li>
