@@ -71,8 +71,8 @@ struct AgentPermission {
 | Block Explorer | [Kite Explorer](https://testnet.kitescan.ai/) |
 | Token | KITE |
 | Faucet | https://faucet.gokite.ai |
-| 合约地址 (HabitEscrow) | `0x6E577Db34B60fEb65c19b26a91c309B969bAA12F` |
-| 合约地址 (StrictToken) | `0x3f7120711c122274b9cB4d8D72A16B49e06d86f1` |
+| 合约地址 (HabitEscrow) | [`0x6E577Db34B60fEb65c19b26a91c309B969bAA12F`](https://testnet.kitescan.ai/address/0x6E577Db34B60fEb65c19b26a91c309B969bAA12F) |
+| 合约地址 (StrictToken) | [`0x3f7120711c122274b9cB4d8D72A16B49e06d86f1`](https://testnet.kitescan.ai/address/0x3f7120711c122274b9cB4d8D72A16B49e06d86f1) |
 
 ---
 
