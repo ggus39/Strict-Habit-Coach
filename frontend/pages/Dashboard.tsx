@@ -3,7 +3,7 @@ import { Icon } from '../components/Icon';
 
 
 import { Page } from '../types';
-import { useAccount, useReadContract } from 'wagmi';
+import { useAccount, useReadContract, usePublicClient } from 'wagmi';
 import { HABIT_ESCROW_ABI, HABIT_ESCROW_ADDRESS, STRICT_TOKEN_ABI, STRICT_TOKEN_ADDRESS, Challenge, ChallengeStatus } from '../contracts';
 import { formatEther } from 'viem';
 import { useState, useEffect } from 'react';
@@ -46,45 +46,46 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
     }
   });
 
-  // 读取每个挑战的详情 (Copied from ChallengeList)
-  const { data: challenge0, isLoading: loading0 } = useReadContract({
-    address: HABIT_ESCROW_ADDRESS,
-    abi: HABIT_ESCROW_ABI,
-    functionName: 'getChallenge',
-    args: address && challengeCount && challengeCount > 0n ? [address, 0n] : undefined,
-    query: { enabled: !!address && !!challengeCount && challengeCount > 0n },
-  });
-
-  const { data: challenge1, isLoading: loading1 } = useReadContract({
-    address: HABIT_ESCROW_ADDRESS,
-    abi: HABIT_ESCROW_ABI,
-    functionName: 'getChallenge',
-    args: address && challengeCount && challengeCount > 1n ? [address, 1n] : undefined,
-    query: { enabled: !!address && !!challengeCount && challengeCount > 1n },
-  });
-
-  const { data: challenge2, isLoading: loading2 } = useReadContract({
-    address: HABIT_ESCROW_ADDRESS,
-    abi: HABIT_ESCROW_ABI,
-    functionName: 'getChallenge',
-    args: address && challengeCount && challengeCount > 2n ? [address, 2n] : undefined,
-    query: { enabled: !!address && !!challengeCount && challengeCount > 2n },
-  });
-
-  const isLoadingChallenges = loadingCount || loading0 || loading1 || loading2;
-
+  const [isLoadingChallenges, setIsLoadingChallenges] = useState(false);
   const [activeChallenges, setActiveChallenges] = useState<(Challenge & { id: number })[]>([]);
+  const publicClient = usePublicClient();
 
+  // 动态读取所有挑战
   useEffect(() => {
-    const all: (Challenge & { id: number })[] = [];
-    if (challenge0) all.push({ ...(challenge0 as unknown as Challenge), id: 0 });
-    if (challenge1) all.push({ ...(challenge1 as unknown as Challenge), id: 1 });
-    if (challenge2) all.push({ ...(challenge2 as unknown as Challenge), id: 2 });
+    const fetchAllChallenges = async () => {
+      if (!address || !challengeCount || challengeCount === 0n || !publicClient) {
+        setActiveChallenges([]);
+        return;
+      }
 
-    // Filter only active challenges
-    const active = all.filter(c => c.status === ChallengeStatus.Active);
-    setActiveChallenges(active);
-  }, [challenge0, challenge1, challenge2]);
+      setIsLoadingChallenges(true);
+      const count = Number(challengeCount);
+      const fetchedChallenges: (Challenge & { id: number })[] = [];
+
+      for (let i = 0; i < count; i++) {
+        try {
+          const challengeData = await publicClient.readContract({
+            address: HABIT_ESCROW_ADDRESS,
+            abi: HABIT_ESCROW_ABI,
+            functionName: 'getChallenge',
+            args: [address, BigInt(i)],
+          });
+          if (challengeData) {
+            fetchedChallenges.push({ ...(challengeData as unknown as Challenge), id: i });
+          }
+        } catch (e) {
+          console.error(`获取挑战 ${i} 失败:`, e);
+        }
+      }
+
+      // 过滤仅活跃挑战
+      const active = fetchedChallenges.filter(c => c.status === ChallengeStatus.Active);
+      setActiveChallenges(active);
+      setIsLoadingChallenges(false);
+    };
+
+    fetchAllChallenges();
+  }, [address, challengeCount, publicClient]);
 
   // 获取最新的挑战ID (保留原有逻辑作为备用，或者用于其他目的)
   const activeChallengeId = challengeCount ? Number(challengeCount) - 1 : undefined;
@@ -174,11 +175,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
       const data = await resp.json();
 
       if (data.success) {
-        setCheckResult(data.message); // 显示 AI 的评语 (UI内展示)
-        // Refresh status
-        handleCheckCommits(true);
+        setCheckResult('审核通过: ' + data.message); // 添加前缀以便识别
+        // 不要立即调用 check，否则会清空弹窗结果
       } else {
-        setCheckResult(data.message); // 显示 AI 的拒绝理由 (UI内展示)
+        setCheckResult('审核拒绝: ' + data.message); // 添加前缀
       }
     } catch (e) {
       console.error(e);
@@ -354,19 +354,19 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
             </div>
 
             {/* Input Area or Feedback Result */}
-            {checkResult && readingModalOpen && !isSubmittingReading && (checkResult.includes('AI') || checkResult.includes('成功') || checkResult.includes('失败')) ? (
-              <div className={`rounded-xl p-6 mb-6 ${checkResult.includes('成功') || checkResult.includes('✅') ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'}`}>
+            {checkResult && readingModalOpen && !isSubmittingReading && (checkResult.includes('AI') || checkResult.includes('成功') || checkResult.includes('失败') || checkResult.includes('审核通过') || checkResult.includes('审核拒绝')) ? (
+              <div className={`rounded-xl p-6 mb-6 ${checkResult.includes('成功') || checkResult.includes('✅') || checkResult.includes('审核通过') ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'}`}>
                 <div className="flex items-start gap-3">
                   <Icon
-                    name={checkResult.includes('成功') || checkResult.includes('✅') ? "check_circle" : "error"}
-                    className={`text-2xl mt-0.5 ${checkResult.includes('成功') || checkResult.includes('✅') ? 'text-emerald-500' : 'text-red-500'}`}
+                    name={checkResult.includes('成功') || checkResult.includes('✅') || checkResult.includes('审核通过') ? "check_circle" : "error"}
+                    className={`text-2xl mt-0.5 ${checkResult.includes('成功') || checkResult.includes('✅') || checkResult.includes('审核通过') ? 'text-emerald-500' : 'text-red-500'}`}
                   />
                   <div>
-                    <h4 className={`font-bold mb-1 ${checkResult.includes('成功') || checkResult.includes('✅') ? 'text-emerald-800' : 'text-red-800'}`}>
-                      {checkResult.includes('成功') || checkResult.includes('✅') ? '审核通过' : '审核拒绝'}
+                    <h4 className={`font-bold mb-1 ${checkResult.includes('成功') || checkResult.includes('✅') || checkResult.includes('审核通过') ? 'text-emerald-800' : 'text-red-800'}`}>
+                      {checkResult.includes('成功') || checkResult.includes('✅') || checkResult.includes('审核通过') ? '审核通过' : '审核拒绝'}
                     </h4>
-                    <p className={`text-sm leading-relaxed ${checkResult.includes('成功') || checkResult.includes('✅') ? 'text-emerald-700' : 'text-red-700'}`}>
-                      {checkResult.replace('打卡成功 ✅ ', '').replace('打卡失败: ', '')}
+                    <p className={`text-sm leading-relaxed ${checkResult.includes('成功') || checkResult.includes('✅') || checkResult.includes('审核通过') ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {checkResult.replace('打卡成功 ✅ ', '').replace('打卡失败: ', '').replace('审核通过: ', '').replace('审核拒绝: ', '')}
                     </p>
                   </div>
                 </div>
@@ -397,7 +397,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
 
             {/* Actions */}
             <div className="flex justify-end gap-3">
-              {!checkResult || !readingModalOpen || isSubmittingReading || (!checkResult.includes('AI') && !checkResult.includes('成功') && !checkResult.includes('失败')) ? (
+              {!checkResult || !readingModalOpen || isSubmittingReading || (!checkResult.includes('AI') && !checkResult.includes('成功') && !checkResult.includes('失败') && !checkResult.includes('审核通过') && !checkResult.includes('审核拒绝')) ? (
                 <>
                   <button
                     onClick={() => setReadingModalOpen(false)}
@@ -430,6 +430,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
                     setReadingModalOpen(false);
                     setReadingNote('');
                     setCheckResult(null);
+                    handleCheckCommits(true); // 关闭弹窗时刷新状态
                   }}
                   className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-all"
                 >
@@ -479,7 +480,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setPage, onSelectChallenge }) => 
                 ? parseFloat(formatEther(activeChallenges.reduce((acc, c) => acc + c.stakeAmount, 0n))).toFixed(4)
                 : '0.00'}
             </span>
-            <span className="text-lg font-bold text-slate-400 mb-1">ETH</span>
+            <span className="text-lg font-bold text-slate-400 mb-1">KITE</span>
           </div>
           <div className="mt-4 flex items-center gap-1 text-xs font-medium text-emerald-600">
             <Icon name="payments" className="text-sm" />

@@ -202,7 +202,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage, challengeId 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               <div className="bg-slate-50 rounded-xl p-6">
                 <p className="text-xs font-bold text-slate-400 mb-2">已质押金额</p>
-                <p className="text-3xl font-black text-slate-800">{formatEther(challenge.stakeAmount)} <span className="text-sm font-bold text-slate-400">ETH</span></p>
+                <p className="text-3xl font-black text-slate-800">{formatEther(challenge.stakeAmount)} <span className="text-sm font-bold text-slate-400">KITE</span></p>
               </div>
               <div className="bg-emerald-50 rounded-xl p-6">
                 <p className="text-xs font-bold text-emerald-600 mb-2">预估年化收益</p>
@@ -218,7 +218,7 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage, challengeId 
               <div>
                 <h4 className="text-sm font-bold text-red-500 mb-1">惩罚规则警示</h4>
                 <p className="text-xs text-red-400 leading-relaxed font-medium">
-                  若今日未能在 24:00 前同步数据，系统将自动扣除当日质押份额 (约 <span className="underline decoration-red-300 cursor-pointer">{Number(formatEther(challenge.stakeAmount)) / targetDays} ETH</span>) 作为惩罚并捐赠至 Web3 公共物品基金。
+                  若今日未能在 24:00 前同步数据，系统将自动扣除当日质押份额 (约 <span className="underline decoration-red-300 cursor-pointer">{Number(formatEther(challenge.stakeAmount)) / targetDays} KITE</span>) 作为惩罚并捐赠至 Web3 公共物品基金。
                 </p>
               </div>
             </div>
@@ -246,38 +246,47 @@ const ChallengeDetail: React.FC<ChallengeDetailProps> = ({ setPage, challengeId 
               </div>
               <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100">
                 <p className="text-xs font-bold text-slate-400 mb-2">累计已获奖励</p>
-                <p className="text-xl font-black text-emerald-500 mb-1">{(Number(formatEther(challenge.stakeAmount)) * 0.1).toFixed(4)} <span className="text-xs text-slate-400">ETH</span></p>
+                <p className="text-xl font-black text-emerald-500 mb-1">{(Number(formatEther(challenge.stakeAmount)) * 0.1).toFixed(4)} <span className="text-xs text-slate-400">KITE</span></p>
                 <p className="text-[10px] text-slate-400">包含节点激励与承诺收益</p>
               </div>
             </div>
 
             {completedDays >= targetDays ? (
-              <button
-                onClick={() => {
-                  if (!address) return;
-                  writeContract({
-                    address: HABIT_ESCROW_ADDRESS,
-                    abi: HABIT_ESCROW_ABI,
-                    functionName: 'claimReward',
-                    args: [BigInt(challengeId!)],
-                    account: address,
-                    chain: undefined
-                  });
-                }}
-                disabled={isPending}
-                className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isPending ? (
-                  <>
-                    <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    领取中...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="emoji_events" className="text-xl" /> 领取挑战奖励
-                  </>
-                )}
-              </button>
+              challenge.stakeAmount > 0n ? (
+                <button
+                  onClick={() => {
+                    if (!address) return;
+                    writeContract({
+                      address: HABIT_ESCROW_ADDRESS,
+                      abi: HABIT_ESCROW_ABI,
+                      functionName: 'claimReward',
+                      args: [BigInt(challengeId!)],
+                      account: address,
+                      chain: undefined
+                    });
+                  }}
+                  disabled={isPending}
+                  className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isPending ? (
+                    <>
+                      <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      领取中...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="emoji_events" className="text-xl" /> 领取挑战奖励
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full mt-6 bg-slate-100 dark:bg-slate-800 text-slate-400 py-4 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200 dark:border-slate-700"
+                >
+                  <Icon name="check_circle" className="text-xl" /> 奖励已领取
+                </button>
+              )
             ) : (
               <button className="w-full mt-6 bg-slate-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">
                 <Icon name="settings_suggest" className="text-xl" /> 管理质押

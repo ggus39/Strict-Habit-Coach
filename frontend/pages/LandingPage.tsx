@@ -57,7 +57,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                                     className="h-14 px-8 bg-primary text-white font-bold rounded-xl text-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-xl shadow-primary/10"
                                 >
                                     立即开启挑战
-                                    <span className="material-symbols-outlined">arrow_forward</span>
                                 </button>
                             </div>
                         </div>
@@ -110,7 +109,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ setPage }) => {
                                     <span className="material-symbols-outlined text-3xl">lock</span>
                                 </div>
                                 <h3 className="text-xl font-bold mb-3">资产承诺机制</h3>
-                                <p className="text-slate-600 dark:text-gray-400">质押至少0.1ETH或更多开启挑战，利用沉没成本效应与损失厌恶心理，激发你最强的执行力。</p>
+                                <p className="text-slate-600 dark:text-gray-400">质押至少0.1 KITE 或更多开启挑战，利用沉没成本效应与损失厌恶心理，激发你最强的执行力。</p>
                             </div>
                             <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow group">
                                 <div className="size-14 bg-orange-100 text-orange-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">

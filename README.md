@@ -21,6 +21,12 @@
 
 > 💡 **核心理念**: 让 AI Agent 成为「裁判」与「执行者」，实现真正的 Agent Economy。
 
+## 🎬 项目演示
+
+[![Strict Habit Coach Demo](https://img.youtube.com/vi/OjpQhafxPfo/0.jpg)](https://www.youtube.com/watch?v=OjpQhafxPfo)
+
+> 📺 **[点击观看项目演示视频 (YouTube)](https://www.youtube.com/watch?v=OjpQhafxPfo)**
+
 ---
 
 ## 🛠️ Kite AI 技术集成
@@ -212,6 +218,14 @@ cd backend
 4. AI Agent 自动验证 → 查看链上交易记录
 5. 周期结束 → 领取奖励
 
+### 链上交易记录 
+
+| 操作 | 交易哈希 | 区块浏览器 |
+|------|---------|-----------|
+| 创建挑战 | `0x88993c39...` | [查看](https://testnet.kitescan.ai/tx/0x88993c39ff54c28337d4f7da13ab8f00d629647685751ac50e70e683ecdb0844) |
+| AI Slash | `0x1aed52e4...` | [查看](https://testnet.kitescan.ai/tx/0x1aed52e4d0a88bf9bc8865ebb3e7e0903ef918aa70c75f0342850eebb5c097e2) |
+| 领取奖励 | `0x445ed639...` | [查看](https://testnet.kitescan.ai/tx/0x445ed639705b13a273b9f37d88941bd7cce5f07cd0039f4491eee273a3540ebb) |
+
 ---
 
 ## 🏭 生产环境部署
@@ -343,21 +357,7 @@ vercel --prod
 
 ---
 
-## 🎬 演示
 
-### 演示视频
-
-> 📹 [点击观看完整演示视频](./demo/demo_video.mp4)
-
-### 链上交易记录
-
-| 操作 | 交易哈希 | 区块浏览器 |
-|------|---------|-----------|
-| 创建挑战 | `0x88993c39...` | [查看](https://testnet.kitescan.ai/tx/0x88993c39ff54c28337d4f7da13ab8f00d629647685751ac50e70e683ecdb0844) |
-| AI Slash | `0x1aed52e4...` | [查看](https://testnet.kitescan.ai/tx/0x1aed52e4d0a88bf9bc8865ebb3e7e0903ef918aa70c75f0342850eebb5c097e2) |
-| 领取奖励 | `0x445ed639...` | [查看](https://testnet.kitescan.ai/tx/0x445ed639705b13a273b9f37d88941bd7cce5f07cd0039f4491eee273a3540ebb) |
-
----
 
 ## 📂 项目结构
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAccount, useReadContract } from 'wagmi';
+import { useAccount, useReadContract, usePublicClient } from 'wagmi';
 import { formatEther } from 'viem';
 import { Page } from '../types';
 import {
@@ -33,6 +33,8 @@ const getHabitIcon = (description: string) => {
 const ChallengeList: React.FC<ChallengeListProps> = ({ setPage, onSelectChallenge }) => {
   const { address, isConnected } = useAccount();
   const [challenges, setChallenges] = useState<(Challenge & { id: number })[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const publicClient = usePublicClient();
 
   // 读取用户挑战数量
   const { data: challengeCount } = useReadContract({
@@ -43,45 +45,41 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ setPage, onSelectChalleng
     query: { enabled: !!address },
   });
 
-  // 读取每个挑战的详情
-  const { data: challenge0 } = useReadContract({
-    address: HABIT_ESCROW_ADDRESS,
-    abi: HABIT_ESCROW_ABI,
-    functionName: 'getChallenge',
-    args: address && challengeCount && challengeCount > 0n ? [address, 0n] : undefined,
-    query: { enabled: !!address && !!challengeCount && challengeCount > 0n },
-  });
-
-  const { data: challenge1 } = useReadContract({
-    address: HABIT_ESCROW_ADDRESS,
-    abi: HABIT_ESCROW_ABI,
-    functionName: 'getChallenge',
-    args: address && challengeCount && challengeCount > 1n ? [address, 1n] : undefined,
-    query: { enabled: !!address && !!challengeCount && challengeCount > 1n },
-  });
-
-  const { data: challenge2 } = useReadContract({
-    address: HABIT_ESCROW_ADDRESS,
-    abi: HABIT_ESCROW_ABI,
-    functionName: 'getChallenge',
-    args: address && challengeCount && challengeCount > 2n ? [address, 2n] : undefined,
-    query: { enabled: !!address && !!challengeCount && challengeCount > 2n },
-  });
-
-  // 组合挑战数据
+  // 动态读取所有挑战
   useEffect(() => {
-    console.log('Challenge 0:', challenge0);
-    console.log('Challenge 1:', challenge1);
-    console.log('Challenge 2:', challenge2);
+    const fetchAllChallenges = async () => {
+      if (!address || !challengeCount || challengeCount === 0n || !publicClient) {
+        setChallenges([]);
+        return;
+      }
 
-    const allChallenges: (Challenge & { id: number })[] = [];
-    if (challenge0) allChallenges.push({ ...(challenge0 as unknown as Challenge), id: 0 });
-    if (challenge1) allChallenges.push({ ...(challenge1 as unknown as Challenge), id: 1 });
-    if (challenge2) allChallenges.push({ ...(challenge2 as unknown as Challenge), id: 2 });
+      setIsLoading(true);
+      const count = Number(challengeCount);
+      const fetchedChallenges: (Challenge & { id: number })[] = [];
 
-    console.log('All Challenges:', allChallenges);
-    setChallenges(allChallenges);
-  }, [challenge0, challenge1, challenge2]);
+      for (let i = 0; i < count; i++) {
+        try {
+          const challengeData = await publicClient.readContract({
+            address: HABIT_ESCROW_ADDRESS,
+            abi: HABIT_ESCROW_ABI,
+            functionName: 'getChallenge',
+            args: [address, BigInt(i)],
+          });
+          if (challengeData) {
+            fetchedChallenges.push({ ...(challengeData as unknown as Challenge), id: i });
+          }
+        } catch (e) {
+          console.error(`获取挑战 ${i} 失败:`, e);
+        }
+      }
+
+      console.log('All Challenges:', fetchedChallenges);
+      setChallenges(fetchedChallenges);
+      setIsLoading(false);
+    };
+
+    fetchAllChallenges();
+  }, [address, challengeCount, publicClient]);
 
   // 活跃挑战
   const activeChallenges = challenges.filter(c => c.status === ChallengeStatus.Active);
@@ -173,7 +171,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ setPage, onSelectChalleng
                           </div>
                           <div>
                             <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">质押金额</p>
-                            <p className="text-lg font-display font-black text-slate-900 dark:text-white">{parseFloat(formatEther(challenge.stakeAmount)).toFixed(4)} <span className="text-xs font-bold text-slate-400">ETH</span></p>
+                            <p className="text-lg font-display font-black text-slate-900 dark:text-white">{parseFloat(formatEther(challenge.stakeAmount)).toFixed(4)} <span className="text-xs font-bold text-slate-400">KITE</span></p>
                           </div>
                         </div>
                       </div>
@@ -211,7 +209,11 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ setPage, onSelectChalleng
                     {completedChallenges.map((challenge) => {
                       const habitInfo = getHabitIcon(challenge.habitDescription);
                       return (
-                        <tr key={challenge.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors">
+                        <tr
+                          key={challenge.id}
+                          className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                          onClick={() => onSelectChallenge?.(challenge.id)}
+                        >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className={`size-8 rounded-lg bg-${habitInfo.color}-50 text-${habitInfo.color}-500 flex items-center justify-center`}>
@@ -227,7 +229,7 @@ const ChallengeList: React.FC<ChallengeListProps> = ({ setPage, onSelectChalleng
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{parseFloat(formatEther(challenge.stakeAmount)).toFixed(4)} ETH</span>
+                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{parseFloat(formatEther(challenge.stakeAmount)).toFixed(4)} KITE</span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${statusConfig[challenge.status].bgClass} ${statusConfig[challenge.status].textClass}`}>

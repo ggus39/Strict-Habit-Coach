@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { sepolia } from 'wagmi/chains';
+import { kiteAITestnet } from '../wagmi.config';
 import { parseEther } from 'viem';
 import { Page } from '../types';
 import { HABIT_ESCROW_ADDRESS, HABIT_ESCROW_ABI, PenaltyType } from '../contracts';
@@ -21,7 +21,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
 
   // 表单状态
   const [selectedHabit, setSelectedHabit] = useState<keyof typeof habitTypes>('reading');
-  const [stakeAmount, setStakeAmount] = useState(0.01); // ETH
+  const [stakeAmount, setStakeAmount] = useState(0.01); // KITE
   const [targetDays, setTargetDays] = useState(21);
   const [penaltyType, setPenaltyType] = useState<PenaltyType>(PenaltyType.Charity);
 
@@ -113,7 +113,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
         habitDescription,
       ],
       value: parseEther(stakeAmount.toString()),
-      chain: sepolia,
+      chain: kiteAITestnet,
       account: address,
       // 手动设置 Gas Limit 避免 "transaction gas limit too high" 错误
       // 某些钱包或 RPC 会估算出一个过高的值 (如 2100万) 导致超过区块上限
@@ -232,16 +232,16 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                         value={targetDays}
                         onChange={(e) => {
                           const val = Number(e.target.value);
-                          setTargetDays(val < 7 ? 7 : val);
+                          setTargetDays(val < 1 ? 1 : val);
                         }}
-                        min={7} // 合约限制最少7天
+                        min={1} // 最少1天
                         max={365}
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                         <span className="text-slate-400 text-sm">天</span>
                       </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-2 ml-1">最少 7 天。坚持越久，奖励越多。</p>
+                    <p className="text-[11px] text-slate-400 mt-2 ml-1">最少 1 天。坚持越久，奖励越多。</p>
                   </div>
                 </div>
               </section>
@@ -254,7 +254,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                     <span className="text-sm text-slate-500 font-medium">质押金额</span>
                     <div className="text-right">
                       <span className="text-3xl font-display font-black text-primary">{stakeAmount}</span>
-                      <span className="text-base font-bold text-slate-900 dark:text-white ml-1">ETH</span>
+                      <span className="text-base font-bold text-slate-900 dark:text-white ml-1">KITE</span>
                     </div>
                   </div>
                   <div className="mb-10">
@@ -268,8 +268,8 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
                       onChange={(e) => setStakeAmount(Number(e.target.value))}
                     />
                     <div className="flex justify-between mt-3 text-[10px] font-medium text-slate-400">
-                      <span>0.01 ETH</span>
-                      <span>1 ETH</span>
+                      <span>0.01 KITE</span>
+                      <span>1 KITE</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-200/50 dark:border-slate-700/50 pt-6">
@@ -323,7 +323,7 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
               <div className="bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex items-center justify-between gap-6 mb-12">
                 <div className="flex flex-col pl-2">
                   <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">总计质押</span>
-                  <span className="text-2xl font-black text-slate-900">{stakeAmount} ETH</span>
+                  <span className="text-2xl font-black text-slate-900">{stakeAmount} KITE</span>
                 </div>
 
                 {error && (

@@ -1,8 +1,8 @@
-// HabitEscrow 合约地址 (Sepolia)
-export const HABIT_ESCROW_ADDRESS = '0xba1180cC038342d9be147cfeC8490af8c44aCE44' as const;
+// HabitEscrow 合约地址 (Kite AI Testnet)
+export const HABIT_ESCROW_ADDRESS = '0x1d4fEaebea612A888cD5230fcbF4A137E5FBeD4B' as const;
 
-// StrictToken 合约地址 (Sepolia)
-export const STRICT_TOKEN_ADDRESS = '0xcECDE33801aDa871ABD5cd0406248B8A70a6FC32' as const;
+// StrictToken 合约地址 (Kite AI Testnet)
+export const STRICT_TOKEN_ADDRESS = '0x8562d963Da5446E455147F181752CB1fe0A76095' as const;
 
 // HabitEscrow ABI - 仅包含前端需要的函数
 export const HABIT_ESCROW_ABI = [

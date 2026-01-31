@@ -78,7 +78,7 @@ export const PrivacyPolicyModal: React.FC<{ isOpen: boolean; onClose: () => void
             <div>
                 <h4 className="font-bold text-slate-900 dark:text-white mb-2">3. 数据存储</h4>
                 <p>
-                    大部分核心业务逻辑（如质押、挑战状态）存储在以太坊（Sepolia 测试网）区块链上。这就是 Web3 的魅力——数据透明且不可篡改。
+                    大部分核心业务逻辑（如质押、挑战状态）存储在 Kite AI Testnet 区块链上。这就是 Web3 的魅力——数据透明且不可篡改。
                     部分元数据（如 AI 审核结果）可能暂时存储在我们的缓存服务器中以加速访问，但仅作为链上数据的补充。
                 </p>
             </div>
@@ -100,7 +100,7 @@ export const TermsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = (p
 
             <div>
                 <h4 className="font-bold text-slate-900 dark:text-white mb-2">1. 服务描述</h4>
-                <p>HabitStaker 是一个帮助用户养成习惯的 Web3 工具。用户通过质押加密资产（如 ETH）来承诺完成特定任务。如果完成任务，质押金退还并获得代币奖励；如果失败，质押金将被扣除。</p>
+                <p>HabitStaker 是一个帮助用户养成习惯的 Web3 工具。用户通过质押加密资产（如 KITE）来承诺完成特定任务。如果完成任务，质押金退还并获得代币奖励；如果失败，质押金将被扣除。</p>
             </div>
 
             <div>
@@ -135,7 +135,7 @@ export const MechanismModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
                 <h4 className="font-bold text-slate-900 dark:text-white mb-2">1. 核心逻辑 (Core Logic)</h4>
                 <p>HabitStaker 的运行基于一套不可篡改的智能合约规则：</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                    <li><strong>质押 (Stake):</strong> 用户在开启挑战时存入 ETH 到 HabitEscrow 合约。</li>
+                    <li><strong>质押 (Stake):</strong> 用户在开启挑战时存入 KITE 到 HabitEscrow 合约。</li>
                     <li><strong>验证 (Verify):</strong> AI Agent 每日根据 GitHub/Strava 数据验证您的行为，并上链记录。</li>
                     <li><strong>结算 (Settlement):</strong>
                         <ul className="list-disc pl-5 mt-1 text-xs text-slate-500">

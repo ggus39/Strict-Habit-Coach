@@ -33,7 +33,7 @@ contract HabitEscrow is Ownable, ReentrancyGuard {
 
     uint256 public minStakeAmount = 0.01 ether; // 最低质押金额
     uint256 public baseReward = 100 * 10 ** 18; // 基础奖励（100 STRICT，对应最低质押+7天）
-    uint256 public baseDays = 7; // 基准挑战天数
+    uint256 public baseDays = 1; // 基准挑战天数
     uint256 public cowardTaxRate = 30; // 懦夫税比例（30%）
 
     // ========== 枚举 ==========
@@ -140,7 +140,7 @@ contract HabitEscrow is Ownable, ReentrancyGuard {
 
     /**
      * @dev 创建挑战
-     * @param _targetDays 目标天数（最少7天）
+     * @param _targetDays 目标天数（最少1天）
      * @param _penaltyType 惩罚去向
      * @param _habitDescription 习惯描述
      */

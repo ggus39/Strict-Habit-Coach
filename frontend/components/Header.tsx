@@ -13,7 +13,12 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setPage }) => {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
-  const { data: balance } = useBalance({ address });
+  const { data: balance } = useBalance({
+    address,
+    query: {
+      refetchInterval: 5000,
+    }
+  });
 
   const { data: strictBalance } = useReadContract({
     address: STRICT_TOKEN_ADDRESS,

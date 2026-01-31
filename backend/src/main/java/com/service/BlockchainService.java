@@ -39,7 +39,13 @@ public class BlockchainService {
 
     @PostConstruct
     public void init() {
-        this.web3j = Web3j.build(new HttpService(rpcUrl));
+        // 增加超时时间设置 (解决 Connect timed out)
+        okhttp3.OkHttpClient.Builder builder = new okhttp3.OkHttpClient.Builder();
+        builder.connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS);
+        builder.readTimeout(60, java.util.concurrent.TimeUnit.SECONDS);
+        builder.writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS);
+        
+        this.web3j = Web3j.build(new HttpService(rpcUrl, builder.build(), false));
         this.credentials = Credentials.create(privateKey);
     }
 
@@ -87,8 +93,13 @@ public class BlockchainService {
                 encodedFunction
         );
 
-        // 4. 签名交易
-        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
+        // 4. 签名交易 (使用 EIP-155)
+        // Kite AI Testnet Chain ID: 2664369527 (需确认，根据 RPC 手动查询或写死)
+        // 也可以动态获取
+        long chainId = web3j.ethChainId().send().getChainId().longValue();
+        System.out.println("Chain ID: " + chainId);
+
+        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, chainId, credentials);
         String hexValue = Numeric.toHexString(signedMessage);
         System.out.println("Signed Transaction Hex: " + hexValue);
 
