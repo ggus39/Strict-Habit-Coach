@@ -23,8 +23,6 @@
 
 ## 🎬 项目演示
 
-[![Strict Habit Coach Demo](https://img.youtube.com/vi/OjpQhafxPfo/0.jpg)](https://www.youtube.com/watch?v=OjpQhafxPfo)
-
 > 📺 **[点击观看项目演示视频 (YouTube)](https://www.youtube.com/watch?v=OjpQhafxPfo)**
 
 ---
