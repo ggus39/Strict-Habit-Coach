@@ -1,166 +1,264 @@
 # Strict-Habit-Coach
-AI Agent 监督你的自律：要么完成任务，要么质押代币被 Slash。由 **DeepSeek V3** 判定内容质量，**AI Agent** 驱动链上支付闭环。
+
+基于 **Kite AI** 技术栈构建的 AI Agent 自动化支付应用 —— 让 AI Agent 监督你的自律，实现链上自动结算与风控。
 
 # ⚖️ Strict Habit Coach (严格自律教练)
 
-> **"要么自律，要么破产。"** —— 这是一个基于 Web3 **AI Agent Payment** 的硬核习惯监督系统。
+> **"要么自律，要么被 Agent Slash。"** —— 基于 Kite AI Agent Payment 的硬核习惯监督系统。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build: EVM](https://img.shields.io/badge/Build-EVM%20Compatible-blue)](https://ethereum.org)
-
----
+[![Kite AI](https://img.shields.io/badge/Powered%20by-Kite%20AI-blueviolet)](https://docs.gokite.ai/)
+[![Sepolia](https://img.shields.io/badge/Network-Sepolia%20Testnet-blue)](https://sepolia.etherscan.io/)
 
 ## 📖 项目愿景
-本项目旨在通过 **AI 裁判 (DeepSeek V3)** 的深度内容分析与 **AI Agent** 的自主链上执行，彻底解决个人自律难题。
-用户质押 ETH，连接 Strava/GitHub 或上传阅读笔记。AI Agent 每日自动验证行为数据真实性与质量，敷衍即由 Agent 直接发起 Slash 交易扣款，达标则自动记录并在周期结束后发放 STRICT 代币奖励。
+
+本项目构建了一个 **AI Agent 自主支付闭环**：
+
+1. **用户质押资产** → AI Agent 托管至 Kite 可编程托管合约 (Programmable Escrow)
+2. **AI Agent 每日验证** → 通过 DeepSeek V3 分析用户行为数据 (GitHub/Strava/阅读笔记)
+3. **自动化结算** → Agent 根据验证结果自主发起链上支付 (Slash 或 奖励)
+4. **风控权限** → 通过 Kite Session Keys 限制单次支付额度与操作范围
+
+> 💡 **核心理念**: 让 AI Agent 成为「裁判」与「执行者」，实现真正的 Agent Economy。
 
 ---
 
-## 🏗️ 核心架构
+## 🛠️ Kite AI 技术集成
+
+### 1. Kite Passport (Agent 身份系统)
+
+```
+Agent DID: did:kite:strict-habit-coach/validator-agent-v1
+```
+
+- AI Agent 拥有独立的加密身份，与用户建立完整信任链
+- Agent 可验证用户授权，确保支付操作合法性
+- 支持链上身份追溯与审计
+
+### 2. Programmable Escrow (可编程托管合约)
+
+我们的 `HabitEscrow.sol` 合约基于 Kite 可编程托管设计理念：
+
+| 函数 | 说明 | Agent 权限 |
+|------|------|-----------|
+| `createChallenge` | 用户质押资产创建挑战 | 仅用户 |
+| `slash` | AI 判定未达标时扣除质押金 | **Agent Only** |
+| `recordDayComplete` | 记录每日打卡状态 | **Agent Only** |
+| `claimReward` | 挑战成功后领取奖励 | 仅用户 |
+| `emergencyWithdraw` | 紧急退出 (扣30%懦夫税) | 仅用户 |
+
+### 3. Session Keys (支付权限控制)
+
+AI Agent 的链上操作受到严格限制：
+
+```solidity
+// 权限配置示例
+struct AgentPermission {
+    uint256 maxSlashPerDay;    // 单日最大 Slash 额度: 0.1 ETH
+    uint256 maxTotalSlash;     // 单挑战最大 Slash 总额: 质押金的 100%
+    uint256 operationWindow;   // 操作时间窗口: 每日 23:00-24:00
+    address[] allowedTargets;  // 允许操作的合约地址
+}
+```
+
+### 4. Sepolia 测试网 部署信息
+
+| 配置项 | 值 |
+|--------|-----|
+| Network | Sepolia Testnet |
+| Chain ID | 11155111 |
+| RPC URL | https://sepolia.infura.io/v3/APIkey |
+| Block Explorer | [TESTNET Sepolia (ETH) Blockchain Explorer](https://sepolia.etherscan.io/) |
+| 合约地址 (HabitEscrow) | `0xcECDE33801aDa871ABD5cd0406248B8A70a6FC32` (已部署) |
+| 合约地址 (StrictToken) | `0xba1180cC038342d9be147cfeC8490af8c44aCE44` (已部署) |
+
+---
+
+## 🏗️ 系统架构
 
 ```mermaid
 graph TB
-    subgraph Frontend["🖥️ 前端层 (React + Vite)"]
-        LP[LandingPage<br/>落地页]
-        DB[Dashboard<br/>仪表盘]
-        CL[ChallengeList<br/>挑战列表]
-        CC[CreateChallenge<br/>创建挑战]
-        CD[ChallengeDetail<br/>挑战详情]
-        LP --> DB
-        DB --> CL
-        DB --> CC
-        CL --> CD
+    subgraph Infrastructure["🛠️ 基础设施"]
+        PASSPORT[Agent Passport<br/>Agent 身份]
+        ESCROW[Programmable Escrow<br/>可编程托管]
+        SESSION[Session Keys<br/>权限控制]
+        CHAIN[Sepolia<br/>测试网]
     end
 
-    subgraph Backend["⚙️ 后端 API 层"]
-        API[REST Controller]
-        SVC[Service 层]
-        REPO[Repository]
-        WEB3[Web3 服务]
-        AGENT[AI Agent 服务]
-        API --> SVC
-        SVC --> REPO
-        SVC --> WEB3
-        SVC --> AGENT
+    subgraph Agent["🤖 AI Agent 层"]
+        VALIDATOR[Validator Agent<br/>验证者 Agent]
+        DEEPSEEK[DeepSeek V3<br/>AI 内容分析]
+        WALLET[Agent Wallet<br/>独立钱包]
     end
 
-    subgraph Database["🗄️ 数据库 (MySQL)"]
-        MYSQL[(用户/挑战/记录)]
+    subgraph User["👤 用户层"]
+        FRONTEND[前端 DApp]
+        USER_WALLET[用户钱包]
     end
 
-    subgraph Blockchain["⛓️ 智能合约层 (Solidity)"]
-        ESC[HabitEscrow.sol]
-        TOKEN[StrictToken.sol]
+    subgraph DataSources["📊 数据源"]
+        GITHUB[GitHub API]
+        STRAVA[Strava API]
+        NOTES[阅读笔记]
     end
 
-    subgraph External["🌐 外部服务"]
-        GHAPI[GitHub API]
-        STRAPI[Strava API]
-        DS["DeepSeek V3<br/>(AI 内容分析)"]
-        CHAIN["EVM 兼容网络<br/>(Sepolia/Base/etc.)"]
-    end
-
-    Frontend <-->|钱包交互/签名| Blockchain
-    Frontend <-->|HTTP API| Backend
-    REPO --> Database
-    AGENT -->|代码提交| GHAPI
-    AGENT -->|运动数据| STRAPI
-    AGENT -->|阅读笔记/内容审核| DS
-    WEB3 -->|Gas 支付/链上结算| CHAIN
-    Blockchain <-->|交易广播| CHAIN
+    USER_WALLET -->|质押资产| ESCROW
+    PASSPORT -->|身份验证| VALIDATOR
+    VALIDATOR -->|拉取数据| DataSources
+    VALIDATOR -->|内容分析| DEEPSEEK
+    DEEPSEEK -->|判定结果| VALIDATOR
+    VALIDATOR -->|Slash/记录| ESCROW
+    SESSION -->|权限约束| WALLET
+    WALLET -->|支付 Gas| CHAIN
+    ESCROW -.->|部署于| CHAIN
 ```
 
 ---
 
-## 📊 核心业务流程：AI Agent Payment Loop
-
-本系统的核心在于 **无人工干预的自动化验证与支付闭环**。AI Agent 拥有独立的链上钱包，根据 DeepSeek V3 的分析结果自动签署交易。
+## 📊 AI Agent Payment 核心流程
 
 ```mermaid
 sequenceDiagram
-    participant U as 用户 (User)
-    participant F as 前端 (Frontend)
-    participant A as AI Agent (Spring Boot)
-    participant E as 外部数据 (GitHub/Strava)
+    participant U as 用户
+    participant P as Agent Passport
+    participant A as AI Agent
+    participant E as Programmable Escrow
     participant D as DeepSeek V3
-    participant C as 智能合约 (EVM)
+    participant C as Sepolia
 
-    Note over U,C: 🟢 1. 承诺确立 (Commitment)
-    U->>F: 发起挑战 (跑步/阅读/代码)
-    F->>C: 质押 ETH (deposit)
-    C-->>F: 锁定资产
+    Note over U,C: 🟢 Phase 1: 资产托管 (Escrow Setup)
+    U->>P: 授权 Agent 验证权限
+    P-->>A: 颁发 Session Key
+    U->>E: 质押 ETH 创建挑战
+    E->>C: 锁定资产至托管合约
 
-    Note over U,C: 🔄 2. 每日验证循环 (Daily Verification)
+    Note over U,C: 🔄 Phase 2: 每日自动验证 (Daily Verification)
     loop 每日 24:00 结算
-        A->>E: 拉取今日数据 (代码提交/运动记录)
-        A->>F: (若阅读挑战) 拉取用户上传的阅读笔记
-        
-        alt 无数据/无笔记
-            A->>A: 判定：MISS (未完成)
-        else 有数据
-            A->>D: Prompt: 分析代码质量/阅读笔记深度...
-            D-->>A: 返回：PASS (达标) 或 FAIL (敷衍)
-        end
+        A->>A: 拉取 GitHub/Strava 数据
+        A->>D: Prompt: 分析行为质量
+        D-->>A: 返回: PASS / FAIL
 
-        Note over A,C: 🤖 3. AI Agent 自主支付 (Agent Payment)
-        alt 判定结果 = PASS
-            A->>C: 调用 recordDayComplete(user)
-            C-->>A: 更新链上进度
-            A->>U: 发送鼓励通知
-        else 判定结果 = FAIL / MISS
-            A->>C: 调用 slash(user) [Agent 支付 Gas]
-            C-->>A: 扣除今日质押金 -> 捐赠池
-            A->>U: 发送惩罚警示
+        Note over A,C: 🤖 Phase 3: Agent 自主支付 (Autonomous Payment)
+        alt PASS - 达标
+            A->>E: recordDayComplete()
+            E->>C: 更新链上状态
+        else FAIL - 未达标
+            A->>E: slash() [Agent 支付 Gas]
+            E->>C: 扣除质押金 → 捐赠池
         end
     end
 
-    Note over U,C: 🏆 4. 最终结算 (Final Settlement)
-    U->>F: 挑战周期结束
-    F->>C: claimReward()
-    C-->>U: 返还剩余本金 + STRICT 代币奖励
+    Note over U,C: 🏆 Phase 4: 最终结算 (Settlement)
+    U->>E: claimReward()
+    E->>U: 返还本金 + STRICT 代币
 ```
-
----
-
-## 🧩 模块职责
-
-### 1. 前端层 (`/frontend`)
-| 页面 | 职责 |
-|------|------|
-| `LandingPage.tsx` | 产品理念介绍、AI Agent Payment 概念展示 |
-| `Dashboard.tsx` | 个人资产看板、STRICT 代币余额、挑战状态概览 |
-| `CreateChallenge.tsx` | 创建挑战、设置质押金额与习惯类型 |
-| `ChallengeDetail.tsx` | 详细进度追踪、查看 AI 对阅读笔记/代码的评价 |
-
-### 2. 后端与 AI Agent 层 (`/backend`)
-*   **数据聚合**: 定时从 GitHub (代码)、Strava (运动) 拉取原始行为数据。
-*   **内容分析**: 接收用户提交的阅读笔记。
-*   **AI 核心 (DeepSeek V3)**:
-    *   分析代码 Commit 的有效性（非简单的空格修改）。
-    *   分析阅读笔记的深度与真实性（防止复制粘贴）。
-    *   分析运动数据的真实性。
-*   **Agent Payment**: 封装 Web3j，管理 Agent 私钥，自主发起链上交易（Slash 或 记录进度）。
-
-### 3. 智能合约层 (`/contracts`)
-
-#### StrictToken.sol - ERC20 激励代币
-*   用户完成挑战后的额外奖励。
-
-#### HabitEscrow.sol - 核心托管逻辑
-| 函数 | 说明 |
-|------|------|
-| `createChallenge` | 用户端调用，质押 ETH 创建条站并锁定资金。 |
-| `slash` | **仅限 Agent 调用**。当 AI 判定未达标时，扣除质押金。 |
-| `recordDayComplete` | **仅限 Agent 调用**。记录每日打卡状态，累积天数。 |
-| `claimReward` | 用户端调用。挑战成功后取回本金和代币。 |
-| `emergencyWithdraw` | 用户端调用。紧急“认怂”退出，扣除 30% 懦夫税。 |
-| `useResurrection` | 用户端调用。消耗复活卡重置当前周期进度。 |
 
 ---
 
 ## 🚀 快速启动
 
-1. **克隆项目**:
-   ```bash
-   git clone [https://github.com/ggus39/Strict-Habit-Coach.git](https://github.com/ggus39/Strict-Habit-Coach.git)
-   ```
+### 环境要求
+
+- Node.js >= 18
+- Java 17 (后端)
+- MetaMask 钱包 (连接 Sepolia Testnet)
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/ggus39/Strict-Habit-Coach.git
+cd Strict-Habit-Coach
+```
+
+### 2. 配置 Sepolia Testnet 网络
+
+在 MetaMask 中添加 sepolia testnet Chain 测试网：
+
+| 配置项 | 值 |
+|--------|-----|
+| Network Name | Sepolia Testnet |
+| RPC URL | https://rpc.sepolia.org      |
+| Chain ID | 11155111                     |
+| Currency Symbol | SepoliaETH                   |
+| Block Explorer | https://sepolia.etherscan.io |
+
+### 3. 启动前端
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 4. 启动后端 (AI Agent)
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+### 5. 体验完整流程
+
+1. 连接钱包 → 选择 Sepolia Testnet
+2. 创建挑战 → 质押 ETH
+3. 完成习惯 → 提交 GitHub Commit / Strava运动记录 / 笔记记录
+4. AI Agent 自动验证 → 查看链上交易记录
+5. 周期结束 → 领取奖励
+
+---
+
+## 🎬 演示
+
+### 演示视频
+
+> 📹 [点击观看完整演示视频](./demo/demo_video.mp4)
+
+### 链上交易记录
+
+| 操作 | 交易哈希 | 区块浏览器 |
+|------|---------|-----------|
+| 创建挑战 | `0xe7b95c73...` | [查看](https://sepolia.etherscan.io/tx/0xe7b95c7368f3d99545ea7bb04ea8874dd9b4b05791f0a7480f71aed4ca0a188b) |
+| AI Slash | `0x92b853dd...` | [查看](https://sepolia.etherscan.io/tx/0x92b853dd9269934a332feb5c906eb2b0ee45be220baa61647a6829daa460fe72) |
+| 领取奖励 | `0x0ba7a5aa...` | [查看](https://sepolia.etherscan.io/tx/0x0ba7a5aa43a9276b3d3810ac62a5ff1e37da5bb3fe1c5e91790ae6a1496cc7d0) |
+
+---
+
+## 📂 项目结构
+
+```
+Strict-Habit-Coach/
+├── frontend/                 # React + Vite 前端
+│   ├── pages/               # 页面组件
+│   ├── components/          # 通用组件
+│   └── contracts/           # 合约 ABI 与地址
+├── backend/                  # Spring Boot 后端 (AI Agent)
+│   ├── agent/               # AI Agent 集成
+│   ├── service/             # 业务逻辑
+│   └── web3/                # 链上交互
+├── contracts/                # Solidity 智能合约
+│   ├── HabitEscrow.sol      # 可编程托管合约
+│   └── StrictToken.sol      # ERC20 激励代币
+└── README.md
+```
+
+---
+
+## 🔗 相关链接
+
+- **Kite AI 官方文档**: https://docs.gokite.ai/
+- **Sepolia 区块浏览器**: https://sepolia.etherscan.io/
+- **项目仓库**: https://github.com/ggus39/Strict-Habit-Coach
+
+---
+
+## 👨‍💻 团队信息
+
+| 成员 | 角色 | GitHub |
+|------|------|--------|
+| ggus39 | 全栈开发 & AI Agent | [@ggus39](https://github.com/ggus39) |
+
+---
+
+## 📄 License
+
+MIT License - 详见 [LICENSE](./LICENSE)

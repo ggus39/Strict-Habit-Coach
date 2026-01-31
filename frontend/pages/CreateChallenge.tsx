@@ -117,7 +117,8 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({ setPage }) => {
       account: address,
       // 手动设置 Gas Limit 避免 "transaction gas limit too high" 错误
       // 某些钱包或 RPC 会估算出一个过高的值 (如 2100万) 导致超过区块上限
-      gas: BigInt(500000),
+      // 提高到 3000000 以确保交易顺利进行，同时避免估算失败
+      gas: BigInt(3000000),
     });
   };
 
