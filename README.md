@@ -26,6 +26,8 @@
 > 🚀 **[点击体验在线 Demo](https://coach-ruddy-eight.vercel.app/)**
 >
 > 📺 **[点击观看项目演示视频 (YouTube)](https://www.youtube.com/watch?v=OjpQhafxPfo)**
+>
+> 📄 **[查看项目完整演示文稿 (PPT/PDF)](./docs/Strict-Habit-Coach%20项目介绍%20.pdf)**
 
 ---
 
